@@ -356,7 +356,7 @@ app.get('/api/reports/test-executions-by-suite', async (req, res) => {
         p.name as project_name,
         COUNT(DISTINCT tc.test_case_id) as total_test_cases,
         COUNT(te.execution_id) as total_executions,
-        COUNT(CASE WHEN te.execution_date >= DATE_SUB(NOW(), INTERVAL ? DAY) THEN te.execution_id END) as recent_executions
+        COUNT(CASE WHEN te.execution_date >= datetime('now', '-' || ? || ' days') THEN te.execution_id END) as recent_executions
       FROM test_suites ts
       JOIN projects p ON ts.project_id = p.project_id
       LEFT JOIN test_cases tc ON ts.test_suite_id = tc.test_suite_id
@@ -409,7 +409,7 @@ app.get('/api/reports/bugs-per-tester', async (req, res) => {
         t.tester_id,
         t.name as tester_name,
         t.email,
-        COUNT(CASE WHEN b.assigned_date >= DATE_SUB(NOW(), INTERVAL ? DAY) THEN b.bug_id END) as bugs_assigned_period,
+        COUNT(CASE WHEN b.assigned_date >= datetime('now', '-' || ? || ' days') THEN b.bug_id END) as bugs_assigned_period,
         COUNT(b.bug_id) as total_bugs_assigned,
         COUNT(CASE WHEN b.status IN ('Closed', 'Verified') THEN 1 END) as bugs_resolved
       FROM testers t
@@ -444,7 +444,7 @@ app.get('/api/reports/bugs-discovered-last-week', async (req, res) => {
       JOIN testers t ON b.discovered_by = t.tester_id
       LEFT JOIN test_cases tc ON b.test_case_id = tc.test_case_id
       JOIN projects p ON b.project_id = p.project_id
-      WHERE b.discovered_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      WHERE b.discovered_date >= date('now', '-7 days')
       ORDER BY b.discovered_date DESC
     `;
     const [results] = await query(sqlQuery);
@@ -510,7 +510,7 @@ app.get('/api/charts/open-issues-by-project', async (req, res) => {
       FROM projects p
       LEFT JOIN bugs b ON p.project_id = b.project_id 
         AND b.status IN ('New', 'Assigned', 'Open', 'Fixed', 'Retest')
-        AND b.discovered_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        AND b.discovered_date >= date('now', '-' || ? || ' days')
       GROUP BY p.project_id, p.name, DATE(b.discovered_date)
       ORDER BY date DESC
     `;
@@ -533,7 +533,7 @@ app.get('/api/charts/closed-issues-by-project', async (req, res) => {
       FROM projects p
       LEFT JOIN bugs b ON p.project_id = b.project_id 
         AND b.status IN ('Closed', 'Verified')
-        AND b.resolution_date >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        AND b.resolution_date >= date('now', '-' || ? || ' days')
       GROUP BY p.project_id, p.name, DATE(b.resolution_date)
       ORDER BY date DESC
     `;
