@@ -1,17 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, FolderKanban } from 'lucide-react';
-import api, { Project, SubProject } from '../lib/api';
+import { Plus, FolderKanban, Loader2 } from 'lucide-react';
+import { Project, SubProject } from '../lib/api';
+import { useProjects, useSubProjects, useCreateProject, useCreateSubProject } from '../hooks/useQueries';
 
 export default function ProjectsTab() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [subProjects, setSubProjects] = useState<SubProject[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { data: projects = [], isLoading } = useProjects();
+  const { data: subProjects = [] } = useSubProjects();
+  const createProject = useCreateProject();
+  const createSubProject = useCreateSubProject();
+
   const [formData, setFormData] = useState<Project>({
     name: '',
     description: '',
@@ -25,52 +28,22 @@ export default function ProjectsTab() {
     description: ''
   });
 
-  useEffect(() => {
-    loadProjects();
-    loadSubProjects();
-  }, []);
-
-  const loadProjects = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getProjects();
-      setProjects(data);
-    } catch (error) {
-      console.error('Error loading projects:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadSubProjects = async () => {
-    try {
-      const data = await api.getSubProjects();
-      setSubProjects(data);
-    } catch (error) {
-      console.error('Error loading sub-projects:', error);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await api.createProject(formData);
-      setFormData({ name: '', description: '', start_date: '', end_date: '', status: 'Active' });
-      loadProjects();
-    } catch (error) {
-      console.error('Error creating project:', error);
-    }
+    createProject.mutate(formData, {
+      onSuccess: () => {
+        setFormData({ name: '', description: '', start_date: '', end_date: '', status: 'Active' });
+      }
+    });
   };
 
   const handleSubProjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await api.createSubProject(subProjectForm);
-      setSubProjectForm({ project_id: 0, name: '', description: '' });
-      loadSubProjects();
-    } catch (error) {
-      console.error('Error creating sub-project:', error);
-    }
+    createSubProject.mutate(subProjectForm, {
+      onSuccess: () => {
+        setSubProjectForm({ project_id: 0, name: '', description: '' });
+      }
+    });
   };
 
   return (
@@ -136,7 +109,10 @@ export default function ProjectsTab() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" className="w-full">Create Project</Button>
+            <Button type="submit" className="w-full" disabled={createProject.isPending}>
+              {createProject.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {createProject.isPending ? 'Creating...' : 'Create Project'}
+            </Button>
           </form>
         </CardContent>
       </Card>
@@ -187,8 +163,9 @@ export default function ProjectsTab() {
                 rows={3}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={!subProjectForm.project_id}>
-              Create Sub-Project
+            <Button type="submit" className="w-full" disabled={!subProjectForm.project_id || createSubProject.isPending}>
+              {createSubProject.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {createSubProject.isPending ? 'Creating...' : 'Create Sub-Project'}
             </Button>
           </form>
         </CardContent>
@@ -203,8 +180,11 @@ export default function ProjectsTab() {
           <CardDescription>View all projects and their sub-projects</CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p className="text-center text-gray-500">Loading...</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+              <span className="ml-2 text-gray-500">Loading projects...</span>
+            </div>
           ) : (
             <div className="space-y-4">
               {projects.map(project => (
