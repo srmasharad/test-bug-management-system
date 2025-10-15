@@ -1,10 +1,6 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import { useState } from "react";
 
-import { FileText } from 'lucide-react';
+import { FileText } from "lucide-react";
 
 import {
   Card,
@@ -12,83 +8,39 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
-import api from '../lib/api';
+import {
+  useBugsDiscoveredLastWeek,
+  useBugsPerTester,
+  useProjectsWithBugs,
+  useTestExecutionsBySuite,
+  useUnassignedBugs,
+} from "../hooks/useQueries";
 
 export default function ReportsTab() {
-  const [report1Data, setReport1Data] = useState<any[]>([]);
-  const [report2Data, setReport2Data] = useState<any[]>([]);
-  const [report3Data, setReport3Data] = useState<any[]>([]);
-  const [report4Data, setReport4Data] = useState<any[]>([]);
-  const [report5Data, setReport5Data] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [report1Days, setReport1Days] = useState(7);
   const [report3Days, setReport3Days] = useState(7);
 
-  const loadReport1 = useCallback(async () => {
-    const data = await api.getTestExecutionsBySuite(report1Days);
-    setReport1Data(data);
-  }, [report1Days]);
+  const { data: report1Data = [] } = useTestExecutionsBySuite(report1Days);
+  const { data: report2Data = [] } = useProjectsWithBugs();
+  const { data: report3Data = [] } = useBugsPerTester(report3Days);
+  const { data: report4Data = [] } = useBugsDiscoveredLastWeek();
+  const { data: report5Data = [] } = useUnassignedBugs();
 
-  const loadReport2 = useCallback(async () => {
-    const data = await api.getProjectsWithBugs();
-    setReport2Data(data);
-  }, []);
-
-  const loadReport3 = useCallback(async () => {
-    const data = await api.getBugsPerTester(report3Days);
-    setReport3Data(data);
-  }, [report3Days]);
-
-  const loadReport4 = useCallback(async () => {
-    const data = await api.getBugsDiscoveredLastWeek();
-    setReport4Data(data);
-  }, []);
-
-  const loadReport5 = useCallback(async () => {
-    const data = await api.getUnassignedBugs();
-    setReport5Data(data);
-  }, []);
-
-  const loadAllReports = useCallback(async () => {
-    setLoading(true);
-    try {
-      await Promise.all([
-        loadReport1(),
-        loadReport2(),
-        loadReport3(),
-        loadReport4(),
-        loadReport5(),
-      ]);
-    } catch (error) {
-      console.error("Error loading reports:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [loadReport1, loadReport2, loadReport3, loadReport4, loadReport5]);
-
-  useEffect(() => {
-    loadAllReports();
-  }, [loadAllReports]);
-
-  const handleReport1DaysChange = async (days: number) => {
+  const handleReport1DaysChange = (days: number) => {
     setReport1Days(days);
-    const data = await api.getTestExecutionsBySuite(days);
-    setReport1Data(data);
   };
 
-  const handleReport3DaysChange = async (days: number) => {
+  const handleReport3DaysChange = (days: number) => {
     setReport3Days(days);
-    const data = await api.getBugsPerTester(days);
-    setReport3Data(data);
   };
 
   return (
@@ -133,7 +85,7 @@ export default function ReportsTab() {
                 </tr>
               </thead>
               <tbody>
-                {report1Data.map((row, idx) => (
+                {report1Data.map((row: any, idx) => (
                   <tr key={idx} className="border-b hover:bg-gray-50">
                     <td className="p-2">{row.suite_name}</td>
                     <td className="p-2">{row.project_name}</td>
@@ -185,7 +137,7 @@ export default function ReportsTab() {
                 </tr>
               </thead>
               <tbody>
-                {report2Data.map((row, idx) => (
+                {report2Data.map((row: any, idx) => (
                   <tr key={idx} className="border-b hover:bg-gray-50">
                     <td className="p-2">{row.project_name}</td>
                     <td className="p-2">{row.sub_project_name || "-"}</td>
@@ -265,7 +217,7 @@ export default function ReportsTab() {
                 </tr>
               </thead>
               <tbody>
-                {report3Data.map((row, idx) => (
+                {report3Data.map((row: any, idx) => (
                   <tr key={idx} className="border-b hover:bg-gray-50">
                     <td className="p-2 font-medium">{row.tester_name}</td>
                     <td className="p-2 text-gray-600">{row.email}</td>
@@ -306,7 +258,7 @@ export default function ReportsTab() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {report4Data.map((bug, idx) => (
+            {report4Data.map((bug: any, idx) => (
               <div key={idx} className="border rounded-lg p-3 hover:bg-gray-50">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -394,7 +346,7 @@ export default function ReportsTab() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {report5Data.map((bug, idx) => (
+            {report5Data.map((bug: any, idx) => (
               <div
                 key={idx}
                 className={`border rounded-lg p-3 ${

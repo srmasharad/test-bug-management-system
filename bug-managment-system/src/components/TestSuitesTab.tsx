@@ -1,81 +1,51 @@
-import {
-  useEffect,
-  useState,
-} from 'react';
+import { useState } from "react";
 
-import {
-  Clipboard,
-  Plus,
-} from 'lucide-react';
+import { Clipboard, Loader2, Plus } from "lucide-react";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import api, {
-  type Project,
-  type TestSuite,
-} from '@/lib/api';
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import type { Project, TestSuite } from "@/lib/api";
+
+import {
+  useCreateTestSuite,
+  useProjects,
+  useTestSuites,
+} from "../hooks/useQueries";
 
 export default function TestSuitesTab() {
-  const [testSuites, setTestSuites] = useState<TestSuite[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { data: testSuites = [], isLoading } = useTestSuites();
+  const { data: projects = [] } = useProjects();
+  const createTestSuite = useCreateTestSuite();
+
   const [formData, setFormData] = useState<TestSuite>({
     project_id: 0,
     name: "",
     description: "",
   });
 
-  useEffect(() => {
-    loadTestSuites();
-    loadProjects();
-  }, []);
-
-  const loadTestSuites = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getTestSuites();
-      setTestSuites(data);
-    } catch (error) {
-      console.error("Error loading test suites:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadProjects = async () => {
-    try {
-      const data = await api.getProjects();
-      setProjects(data);
-    } catch (error) {
-      console.error("Error loading projects:", error);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await api.createTestSuite(formData);
-      setFormData({ project_id: 0, name: "", description: "" });
-      loadTestSuites();
-    } catch (error) {
-      console.error("Error creating test suite:", error);
-    }
+    createTestSuite.mutate(formData, {
+      onSuccess: () => {
+        setFormData({ project_id: 0, name: "", description: "" });
+      },
+    });
   };
 
   return (
@@ -104,7 +74,7 @@ export default function TestSuitesTab() {
                   <SelectValue placeholder="Select project" />
                 </SelectTrigger>
                 <SelectContent>
-                  {projects.map((project) => (
+                  {projects.map((project: Project) => (
                     <SelectItem
                       key={project.project_id}
                       value={project.project_id!.toString()}
@@ -140,9 +110,12 @@ export default function TestSuitesTab() {
             <Button
               type="submit"
               className="w-full"
-              disabled={!formData.project_id}
+              disabled={!formData.project_id || createTestSuite.isPending}
             >
-              Create Test Suite
+              {createTestSuite.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {createTestSuite.isPending ? "Creating..." : "Create Test Suite"}
             </Button>
           </form>
         </CardContent>
@@ -157,13 +130,16 @@ export default function TestSuitesTab() {
           <CardDescription>View all test suites</CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p className="text-center text-gray-500">Loading...</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+              <span className="ml-2 text-gray-500">Loading test suites...</span>
+            </div>
           ) : (
             <div className="space-y-3">
-              {testSuites.map((suite) => {
+              {testSuites.map((suite: TestSuite) => {
                 const project = projects.find(
-                  (p) => p.project_id === suite.project_id
+                  (p: Project) => p.project_id === suite.project_id
                 );
                 return (
                   <div

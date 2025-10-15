@@ -1,5 +1,14 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
+const handleResponse = async (response: Response) => {
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || `HTTP error! status: ${response.status}`);
+  }
+  const text = await response.text();
+  return text ? JSON.parse(text) : {};
+};
+
 export interface Project {
   project_id?: number;
   name: string;
@@ -74,120 +83,118 @@ export interface Bug {
 }
 
 const api = {
-  getProjects: () => fetch(`${API_URL}/api/projects`).then((r) => r.json()),
+  getProjects: () => fetch(`${API_URL}/api/projects`).then(handleResponse),
   createProject: (project: Project) =>
     fetch(`${API_URL}/api/projects`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(project),
-    }).then((r) => r.json()),
+    }).then(handleResponse),
 
   getSubProjects: (projectId?: number) => {
     const url = projectId
       ? `${API_URL}/api/subprojects?project_id=${projectId}`
       : `${API_URL}/api/subprojects`;
-    return fetch(url).then((r) => r.json());
+    return fetch(url).then(handleResponse);
   },
   createSubProject: (subproject: SubProject) =>
     fetch(`${API_URL}/api/subprojects`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(subproject),
-    }).then((r) => r.json()),
+    }).then(handleResponse),
 
-  getTesters: () => fetch(`${API_URL}/api/testers`).then((r) => r.json()),
+  getTesters: () => fetch(`${API_URL}/api/testers`).then(handleResponse),
   createTester: (tester: Tester) =>
     fetch(`${API_URL}/api/testers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(tester),
-    }).then((r) => r.json()),
+    }).then(handleResponse),
 
   getTestSuites: (projectId?: number) => {
     const url = projectId
       ? `${API_URL}/api/testsuites?project_id=${projectId}`
       : `${API_URL}/api/testsuites`;
-    return fetch(url).then((r) => r.json());
+    return fetch(url).then(handleResponse);
   },
   createTestSuite: (suite: TestSuite) =>
     fetch(`${API_URL}/api/testsuites`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(suite),
-    }).then((r) => r.json()),
+    }).then(handleResponse),
 
   getTestCases: (suiteId?: number) => {
     const url = suiteId
       ? `${API_URL}/api/testcases?test_suite_id=${suiteId}`
       : `${API_URL}/api/testcases`;
-    return fetch(url).then((r) => r.json());
+    return fetch(url).then(handleResponse);
   },
   createTestCase: (testcase: TestCase) =>
     fetch(`${API_URL}/api/testcases`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(testcase),
-    }).then((r) => r.json()),
+    }).then(handleResponse),
 
-  getExecutions: () => fetch(`${API_URL}/api/executions`).then((r) => r.json()),
+  getExecutions: () => fetch(`${API_URL}/api/executions`).then(handleResponse),
   createExecution: (execution: TestExecution) =>
     fetch(`${API_URL}/api/executions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(execution),
-    }).then((r) => r.json()),
+    }).then(handleResponse),
 
   getBugs: (projectId?: number) => {
     const url = projectId
       ? `${API_URL}/api/bugs?project_id=${projectId}`
       : `${API_URL}/api/bugs`;
-    return fetch(url).then((r) => r.json());
+    return fetch(url).then(handleResponse);
   },
   createBug: (bug: Bug) =>
     fetch(`${API_URL}/api/bugs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(bug),
-    }).then((r) => r.json()),
+    }).then(handleResponse),
   updateBug: (bugId: number, updates: Partial<Bug>) =>
     fetch(`${API_URL}/api/bugs/${bugId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
-    }).then((r) => r.json()),
+    }).then(handleResponse),
 
   getTestExecutionsBySuite: (days: number = 7) =>
     fetch(`${API_URL}/api/reports/test-executions-by-suite?days=${days}`).then(
-      (r) => r.json()
+      handleResponse
     ),
   getProjectsWithBugs: () =>
-    fetch(`${API_URL}/api/reports/projects-with-bugs`).then((r) => r.json()),
+    fetch(`${API_URL}/api/reports/projects-with-bugs`).then(handleResponse),
   getBugsPerTester: (days: number = 7) =>
-    fetch(`${API_URL}/api/reports/bugs-per-tester?days=${days}`).then((r) =>
-      r.json()
+    fetch(`${API_URL}/api/reports/bugs-per-tester?days=${days}`).then(
+      handleResponse
     ),
   getBugsDiscoveredLastWeek: () =>
-    fetch(`${API_URL}/api/reports/bugs-discovered-last-week`).then((r) =>
-      r.json()
+    fetch(`${API_URL}/api/reports/bugs-discovered-last-week`).then(
+      handleResponse
     ),
   getUnassignedBugs: () =>
-    fetch(`${API_URL}/api/reports/unassigned-bugs`).then((r) => r.json()),
+    fetch(`${API_URL}/api/reports/unassigned-bugs`).then(handleResponse),
 
   getOpenIssuesByProject: (days: number = 30) =>
     fetch(`${API_URL}/api/charts/open-issues-by-project?days=${days}`).then(
-      (r) => r.json()
+      handleResponse
     ),
   getClosedIssuesByProject: (days: number = 30) =>
     fetch(`${API_URL}/api/charts/closed-issues-by-project?days=${days}`).then(
-      (r) => r.json()
+      handleResponse
     ),
   getBugStatusDistribution: () =>
-    fetch(`${API_URL}/api/charts/bug-status-distribution`).then((r) =>
-      r.json()
-    ),
+    fetch(`${API_URL}/api/charts/bug-status-distribution`).then(handleResponse),
   getBugSeverityDistribution: () =>
-    fetch(`${API_URL}/api/charts/bug-severity-distribution`).then((r) =>
-      r.json()
+    fetch(`${API_URL}/api/charts/bug-severity-distribution`).then(
+      handleResponse
     ),
 };
 

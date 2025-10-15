@@ -1,29 +1,25 @@
-import {
-  useEffect,
-  useState,
-} from 'react';
+import { useState } from "react";
 
-import {
-  Mail,
-  Plus,
-  Users,
-} from 'lucide-react';
+import { Loader2, Mail, Plus, Users } from "lucide-react";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import api, { type Tester } from '@/lib/api';
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { type Tester } from "@/lib/api";
+
+import { useCreateTester, useTesters } from "../hooks/useQueries";
 
 export default function TestersTab() {
-  const [testers, setTesters] = useState<Tester[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { data: testers = [], isLoading } = useTesters();
+  const createTester = useCreateTester();
+
   const [formData, setFormData] = useState<Tester>({
     name: "",
     email: "",
@@ -31,36 +27,18 @@ export default function TestersTab() {
     date_joined: new Date().toISOString().split("T")[0],
   });
 
-  useEffect(() => {
-    loadTesters();
-  }, []);
-
-  const loadTesters = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getTesters();
-      setTesters(data);
-    } catch (error) {
-      console.error("Error loading testers:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await api.createTester(formData);
-      setFormData({
-        name: "",
-        email: "",
-        role: "",
-        date_joined: new Date().toISOString().split("T")[0],
-      });
-      loadTesters();
-    } catch (error) {
-      console.error("Error creating tester:", error);
-    }
+    createTester.mutate(formData, {
+      onSuccess: () => {
+        setFormData({
+          name: "",
+          email: "",
+          role: "",
+          date_joined: new Date().toISOString().split("T")[0],
+        });
+      },
+    });
   };
 
   return (
@@ -121,8 +99,15 @@ export default function TestersTab() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full">
-              Add Tester
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={createTester.isPending}
+            >
+              {createTester.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {createTester.isPending ? "Adding..." : "Add Tester"}
             </Button>
           </form>
         </CardContent>
@@ -137,11 +122,14 @@ export default function TestersTab() {
           <CardDescription>View all registered testers</CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p className="text-center text-gray-500">Loading...</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+              <span className="ml-2 text-gray-500">Loading testers...</span>
+            </div>
           ) : (
             <div className="space-y-3">
-              {testers.map((tester) => (
+              {testers.map((tester: Tester) => (
                 <div
                   key={tester.tester_id}
                   className="border rounded-lg p-4 bg-white"

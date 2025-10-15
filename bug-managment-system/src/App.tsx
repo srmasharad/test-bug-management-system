@@ -6,26 +6,23 @@ import {
   FlaskConical,
   FolderKanban,
   Users,
-} from 'lucide-react';
+} from "lucide-react";
+import { Toaster } from "sonner";
 
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import BugsTab from './components/BugsTab';
-import ChartsTab from './components/ChartsTab';
-import ProjectsTab from './components/ProjectsTab';
-import ReportsTab from './components/ReportsTab';
-import TestCasesTab from './components/TestCasesTab';
-import TestersTab from './components/TestersTab';
-import TestSuitesTab from './components/TestSuitesTab';
+import BugsTab from "./components/BugsTab";
+import ChartsTab from "./components/ChartsTab";
+import ProjectsTab from "./components/ProjectsTab";
+import ReportsTab from "./components/ReportsTab";
+import TestCasesTab from "./components/TestCasesTab";
+import TestersTab from "./components/TestersTab";
+import TestSuitesTab from "./components/TestSuitesTab";
 
 function App() {
   return (
     <div className="min-h-screen bg-gray-50">
+      <Toaster position="top-right" richColors />
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">

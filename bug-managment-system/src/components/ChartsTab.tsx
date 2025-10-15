@@ -1,14 +1,6 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from 'react';
+import { useMemo, useState } from "react";
 
-import {
-  BarChart3,
-  PieChart as PieChartIcon,
-  TrendingUp,
-} from 'lucide-react';
+import { BarChart3, PieChart as PieChartIcon, TrendingUp } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -21,7 +13,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from 'recharts';
+} from "recharts";
 
 import {
   Card,
@@ -29,16 +21,21 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
-import api from '../lib/api';
+import {
+  useBugSeverityDistribution,
+  useBugStatusDistribution,
+  useClosedIssuesByProject,
+  useOpenIssuesByProject,
+} from "../hooks/useQueries";
 
 const COLORS = [
   "#3b82f6",
@@ -51,38 +48,16 @@ const COLORS = [
 ];
 
 export default function ChartsTab() {
-  const [openIssuesData, setOpenIssuesData] = useState([]);
-  const [closedIssuesData, setClosedIssuesData] = useState([]);
-  const [statusDistData, setStatusDistData] = useState([]);
-  const [severityDistData, setSeverityDistData] = useState([]);
   const [openPeriod, setOpenPeriod] = useState(30);
   const [closedPeriod, setClosedPeriod] = useState(30);
-  const [loading, setLoading] = useState(false);
 
-  const loadAllCharts = useCallback(async () => {
-    setLoading(true);
-    try {
-      await Promise.all([
-        loadOpenIssues(openPeriod),
-        loadClosedIssues(closedPeriod),
-        loadStatusDistribution(),
-        loadSeverityDistribution(),
-      ]);
-    } catch (error) {
-      console.error("Error loading charts:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [closedPeriod, openPeriod]);
+  const { data: openIssuesRaw = [] } = useOpenIssuesByProject(openPeriod);
+  const { data: closedIssuesRaw = [] } = useClosedIssuesByProject(closedPeriod);
+  const { data: statusDistData = [] } = useBugStatusDistribution();
+  const { data: severityDistData = [] } = useBugSeverityDistribution();
 
-  useEffect(() => {
-    loadAllCharts();
-  }, [loadAllCharts]);
-
-  const loadOpenIssues = async (days: number) => {
-    const data = await api.getOpenIssuesByProject(days);
-
-    const aggregated = data.reduce((acc: any, row: any) => {
+  const openIssuesData = useMemo(() => {
+    return openIssuesRaw.reduce((acc: any, row: any) => {
       const existing = acc.find(
         (item: any) => item.project_name === row.project_name
       );
@@ -93,14 +68,10 @@ export default function ChartsTab() {
       }
       return acc;
     }, []);
+  }, [openIssuesRaw]);
 
-    setOpenIssuesData(aggregated);
-  };
-
-  const loadClosedIssues = async (days: number) => {
-    const data = await api.getClosedIssuesByProject(days);
-
-    const aggregated = data.reduce((acc: any, row: any) => {
+  const closedIssuesData = useMemo(() => {
+    return closedIssuesRaw.reduce((acc: any, row: any) => {
       const existing = acc.find(
         (item: any) => item.project_name === row.project_name
       );
@@ -111,28 +82,14 @@ export default function ChartsTab() {
       }
       return acc;
     }, []);
+  }, [closedIssuesRaw]);
 
-    setClosedIssuesData(aggregated);
-  };
-
-  const loadStatusDistribution = async () => {
-    const data = await api.getBugStatusDistribution();
-    setSeverityDistData(data);
-  };
-
-  const loadSeverityDistribution = async () => {
-    const data = await api.getBugSeverityDistribution();
-    setStatusDistData(data);
-  };
-
-  const handleOpenPeriodChange = async (days: number) => {
+  const handleOpenPeriodChange = (days: number) => {
     setOpenPeriod(days);
-    await loadOpenIssues(days);
   };
 
-  const handleClosedPeriodChange = async (days: number) => {
+  const handleClosedPeriodChange = (days: number) => {
     setClosedPeriod(days);
-    await loadClosedIssues(days);
   };
 
   return (
@@ -253,7 +210,7 @@ export default function ChartsTab() {
                     outerRadius={100}
                     label={(entry) => `${entry.severity}: ${entry.count}`}
                   >
-                    {statusDistData.map((entry, index) => (
+                    {statusDistData.map((entry: any, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={COLORS[index % COLORS.length]}
@@ -293,7 +250,7 @@ export default function ChartsTab() {
                     outerRadius={100}
                     label={(entry) => `${entry.status}: ${entry.count}`}
                   >
-                    {severityDistData.map((entry, index) => (
+                    {severityDistData.map((entry: any, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={COLORS[index % COLORS.length]}

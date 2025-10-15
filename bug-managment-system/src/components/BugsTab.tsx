@@ -1,47 +1,51 @@
-import {
-  useEffect,
-  useState,
-} from 'react';
+import { useState } from "react";
 
-import {
-  Bug,
-  Edit,
-  Plus,
-} from 'lucide-react';
+import { Bug, Edit, Loader2, Plus } from "lucide-react";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import api, {
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import {
   type Bug as BugType,
   type Project,
   type SubProject,
   type TestCase,
   type Tester,
-} from '@/lib/api';
+} from "@/lib/api";
+
+import {
+  useBugs,
+  useCreateBug,
+  useProjects,
+  useSubProjects,
+  useTestCases,
+  useTesters,
+  useUpdateBug,
+} from "../hooks/useQueries";
 
 export default function BugsTab() {
-  const [bugs, setBugs] = useState<BugType[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [subProjects, setSubProjects] = useState<SubProject[]>([]);
-  const [testCases, setTestCases] = useState<TestCase[]>([]);
-  const [testers, setTesters] = useState<Tester[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { data: bugs = [], isLoading } = useBugs();
+  const { data: projects = [] } = useProjects();
+  const { data: subProjects = [] } = useSubProjects();
+  const { data: testCases = [] } = useTestCases();
+  const { data: testers = [] } = useTesters();
+  const createBug = useCreateBug();
+  const updateBug = useUpdateBug();
   const [editingBug, setEditingBug] = useState<number | null>(null);
 
   const [formData, setFormData] = useState<BugType>({
@@ -60,99 +64,42 @@ export default function BugsTab() {
     environment: "",
   });
 
-  useEffect(() => {
-    loadBugs();
-    loadProjects();
-    loadSubProjects();
-    loadTestCases();
-    loadTesters();
-  }, []);
-
-  const loadBugs = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getBugs();
-      setBugs(data);
-    } catch (error) {
-      console.error("Error loading bugs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadProjects = async () => {
-    try {
-      const data = await api.getProjects();
-      setProjects(data);
-    } catch (error) {
-      console.error("Error loading projects:", error);
-    }
-  };
-
-  const loadSubProjects = async () => {
-    try {
-      const data = await api.getSubProjects();
-      setSubProjects(data);
-    } catch (error) {
-      console.error("Error loading sub-projects:", error);
-    }
-  };
-
-  const loadTestCases = async () => {
-    try {
-      const data = await api.getTestCases();
-      setTestCases(data);
-    } catch (error) {
-      console.error("Error loading test cases:", error);
-    }
-  };
-
-  const loadTesters = async () => {
-    try {
-      const data = await api.getTesters();
-      setTesters(data);
-    } catch (error) {
-      console.error("Error loading testers:", error);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await api.createBug(formData);
-      setFormData({
-        project_id: 0,
-        sub_project_id: undefined,
-        test_case_id: undefined,
-        discovered_by: 0,
-        assigned_to: undefined,
-        name: "",
-        description: "",
-        steps_to_reproduce: "",
-        status: "New",
-        severity: "Medium",
-        priority: "P3",
-        type: "Functional",
-        environment: "",
-      });
-      loadBugs();
-    } catch (error) {
-      console.error("Error creating bug:", error);
-    }
+    createBug.mutate(formData, {
+      onSuccess: () => {
+        setFormData({
+          project_id: 0,
+          sub_project_id: undefined,
+          test_case_id: undefined,
+          discovered_by: 0,
+          assigned_to: undefined,
+          name: "",
+          description: "",
+          steps_to_reproduce: "",
+          status: "New",
+          severity: "Medium",
+          priority: "P3",
+          type: "Functional",
+          environment: "",
+        });
+      },
+    });
   };
 
   const handleUpdate = async (bugId: number, updates: Partial<BugType>) => {
-    try {
-      await api.updateBug(bugId, updates);
-      loadBugs();
-      setEditingBug(null);
-    } catch (error) {
-      console.error("Error updating bug:", error);
-    }
+    updateBug.mutate(
+      { bugId, updates },
+      {
+        onSuccess: () => {
+          setEditingBug(null);
+        },
+      }
+    );
   };
 
   const filteredSubProjects = subProjects.filter(
-    (sp) => sp.project_id === formData.project_id
+    (sp: SubProject) => sp.project_id === formData.project_id
   );
 
   const getSeverityColor = (severity: string) => {
@@ -238,7 +185,7 @@ export default function BugsTab() {
                   <SelectValue placeholder="Select project" />
                 </SelectTrigger>
                 <SelectContent>
-                  {projects.map((project) => (
+                  {projects.map((project: Project) => (
                     <SelectItem
                       key={project.project_id}
                       value={project.project_id!.toString()}
@@ -267,7 +214,7 @@ export default function BugsTab() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  {filteredSubProjects.map((sp) => (
+                  {filteredSubProjects.map((sp: SubProject) => (
                     <SelectItem
                       key={sp.sub_project_id}
                       value={sp.sub_project_id!.toString()}
@@ -296,7 +243,7 @@ export default function BugsTab() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  {testCases.map((tc) => (
+                  {testCases.map((tc: TestCase) => (
                     <SelectItem
                       key={tc.test_case_id}
                       value={tc.test_case_id!.toString()}
@@ -320,7 +267,7 @@ export default function BugsTab() {
                   <SelectValue placeholder="Select tester" />
                 </SelectTrigger>
                 <SelectContent>
-                  {testers.map((tester) => (
+                  {testers.map((tester: Tester) => (
                     <SelectItem
                       key={tester.tester_id}
                       value={tester.tester_id!.toString()}
@@ -348,7 +295,7 @@ export default function BugsTab() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Unassigned</SelectItem>
-                  {testers.map((tester) => (
+                  {testers.map((tester: Tester) => (
                     <SelectItem
                       key={tester.tester_id}
                       value={tester.tester_id!.toString()}
@@ -493,9 +440,16 @@ export default function BugsTab() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={!formData.project_id || !formData.discovered_by}
+                disabled={
+                  !formData.project_id ||
+                  !formData.discovered_by ||
+                  createBug.isPending
+                }
               >
-                Report Bug
+                {createBug.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {createBug.isPending ? "Reporting..." : "Report Bug"}
               </Button>
             </div>
           </form>
@@ -511,25 +465,28 @@ export default function BugsTab() {
           <CardDescription>View and manage all reported bugs</CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p className="text-center text-gray-500">Loading...</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+              <span className="ml-2 text-gray-500">Loading bugs...</span>
+            </div>
           ) : (
             <div className="space-y-4">
-              {bugs.map((bug) => {
+              {bugs.map((bug: BugType) => {
                 const project = projects.find(
-                  (p) => p.project_id === bug.project_id
+                  (p: Project) => p.project_id === bug.project_id
                 );
                 const subProject = subProjects.find(
-                  (sp) => sp.sub_project_id === bug.sub_project_id
+                  (sp: SubProject) => sp.sub_project_id === bug.sub_project_id
                 );
                 const testCase = testCases.find(
-                  (tc) => tc.test_case_id === bug.test_case_id
+                  (tc: TestCase) => tc.test_case_id === bug.test_case_id
                 );
                 const discoveredBy = testers.find(
-                  (t) => t.tester_id === bug.discovered_by
+                  (t: Tester) => t.tester_id === bug.discovered_by
                 );
                 const assignedTo = testers.find(
-                  (t) => t.tester_id === bug.assigned_to
+                  (t: Tester) => t.tester_id === bug.assigned_to
                 );
                 const isEditing = editingBug === bug.bug_id;
 
@@ -682,7 +639,7 @@ export default function BugsTab() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="none">Unassigned</SelectItem>
-                              {testers.map((tester) => (
+                              {testers.map((tester: Tester) => (
                                 <SelectItem
                                   key={tester.tester_id}
                                   value={tester.tester_id!.toString()}
