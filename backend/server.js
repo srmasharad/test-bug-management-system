@@ -100,15 +100,15 @@ app.post('/api/subprojects', async (req, res) => {
 app.get('/api/subprojects', async (req, res) => {
   try {
     const { project_id } = req.query;
-    let query = 'SELECT * FROM sub_projects';
+    let sql = 'SELECT * FROM sub_projects';
     let params = [];
     
     if (project_id) {
-      query += ' WHERE project_id = ?';
+      sql += ' WHERE project_id = ?';
       params.push(project_id);
     }
     
-    const [subprojects] = await query(query, params);
+    const [subprojects] = await query(sql, params);
     res.json(subprojects);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -168,15 +168,15 @@ app.post('/api/testsuites', async (req, res) => {
 app.get('/api/testsuites', async (req, res) => {
   try {
     const { project_id } = req.query;
-    let query = 'SELECT * FROM test_suites';
+    let sql = 'SELECT * FROM test_suites';
     let params = [];
     
     if (project_id) {
-      query += ' WHERE project_id = ?';
+      sql += ' WHERE project_id = ?';
       params.push(project_id);
     }
     
-    const [suites] = await query(query, params);
+    const [suites] = await query(sql, params);
     res.json(suites);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -201,15 +201,15 @@ app.post('/api/testcases', async (req, res) => {
 app.get('/api/testcases', async (req, res) => {
   try {
     const { test_suite_id } = req.query;
-    let query = 'SELECT * FROM test_cases';
+    let sql = 'SELECT * FROM test_cases';
     let params = [];
     
     if (test_suite_id) {
-      query += ' WHERE test_suite_id = ?';
+      sql += ' WHERE test_suite_id = ?';
       params.push(test_suite_id);
     }
     
-    const [testcases] = await query(query, params);
+    const [testcases] = await query(sql, params);
     res.json(testcases);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -281,15 +281,15 @@ app.post('/api/bugs', async (req, res) => {
 app.get('/api/bugs', async (req, res) => {
   try {
     const { project_id } = req.query;
-    let query = 'SELECT * FROM bugs';
+    let sql = 'SELECT * FROM bugs';
     let params = [];
     
     if (project_id) {
-      query += ' WHERE project_id = ?';
+      sql += ' WHERE project_id = ?';
       params.push(project_id);
     }
     
-    const [bugs] = await query(query, params);
+    const [bugs] = await query(sql, params);
     res.json(bugs);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -349,7 +349,7 @@ app.put('/api/bugs/:id', async (req, res) => {
 app.get('/api/reports/test-executions-by-suite', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 7;
-    const query = `
+    const sqlQuery = `
       SELECT 
         ts.test_suite_id,
         ts.name as suite_name,
@@ -364,7 +364,7 @@ app.get('/api/reports/test-executions-by-suite', async (req, res) => {
       GROUP BY ts.test_suite_id, ts.name, p.name
       ORDER BY p.name, ts.name
     `;
-    const [results] = await query(query, [days]);
+    const [results] = await query(sqlQuery, [days]);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -373,7 +373,7 @@ app.get('/api/reports/test-executions-by-suite', async (req, res) => {
 
 app.get('/api/reports/projects-with-bugs', async (req, res) => {
   try {
-    const query = `
+    const sqlQuery = `
       SELECT 
         p.project_id,
         p.name as project_name,
@@ -394,7 +394,7 @@ app.get('/api/reports/projects-with-bugs', async (req, res) => {
       GROUP BY p.project_id, p.name, p.status, sp.sub_project_id, sp.name
       ORDER BY p.name, sp.name
     `;
-    const [results] = await query(query);
+    const [results] = await query(sqlQuery);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -404,7 +404,7 @@ app.get('/api/reports/projects-with-bugs', async (req, res) => {
 app.get('/api/reports/bugs-per-tester', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 7;
-    const query = `
+    const sqlQuery = `
       SELECT 
         t.tester_id,
         t.name as tester_name,
@@ -417,7 +417,7 @@ app.get('/api/reports/bugs-per-tester', async (req, res) => {
       GROUP BY t.tester_id, t.name, t.email
       ORDER BY bugs_assigned_period DESC, t.name
     `;
-    const [results] = await query(query, [days]);
+    const [results] = await query(sqlQuery, [days]);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -426,7 +426,7 @@ app.get('/api/reports/bugs-per-tester', async (req, res) => {
 
 app.get('/api/reports/bugs-discovered-last-week', async (req, res) => {
   try {
-    const query = `
+    const sqlQuery = `
       SELECT 
         b.bug_id,
         b.name as bug_name,
@@ -447,7 +447,7 @@ app.get('/api/reports/bugs-discovered-last-week', async (req, res) => {
       WHERE b.discovered_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)
       ORDER BY b.discovered_date DESC
     `;
-    const [results] = await query(query);
+    const [results] = await query(sqlQuery);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -456,7 +456,7 @@ app.get('/api/reports/bugs-discovered-last-week', async (req, res) => {
 
 app.get('/api/reports/unassigned-bugs', async (req, res) => {
   try {
-    const query = `
+    const sqlQuery = `
       SELECT 
         b.bug_id,
         b.name,
@@ -490,7 +490,7 @@ app.get('/api/reports/unassigned-bugs', async (req, res) => {
         END,
         b.discovered_date DESC
     `;
-    const [results] = await query(query);
+    const [results] = await query(sqlQuery);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -501,7 +501,7 @@ app.get('/api/reports/unassigned-bugs', async (req, res) => {
 app.get('/api/charts/open-issues-by-project', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
-    const query = `
+    const sqlQuery = `
       SELECT 
         p.project_id,
         p.name as project_name,
@@ -514,7 +514,7 @@ app.get('/api/charts/open-issues-by-project', async (req, res) => {
       GROUP BY p.project_id, p.name, DATE(b.discovered_date)
       ORDER BY date DESC
     `;
-    const [results] = await query(query, [days]);
+    const [results] = await query(sqlQuery, [days]);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -524,7 +524,7 @@ app.get('/api/charts/open-issues-by-project', async (req, res) => {
 app.get('/api/charts/closed-issues-by-project', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
-    const query = `
+    const sqlQuery = `
       SELECT 
         p.project_id,
         p.name as project_name,
@@ -537,7 +537,7 @@ app.get('/api/charts/closed-issues-by-project', async (req, res) => {
       GROUP BY p.project_id, p.name, DATE(b.resolution_date)
       ORDER BY date DESC
     `;
-    const [results] = await query(query, [days]);
+    const [results] = await query(sqlQuery, [days]);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -546,7 +546,7 @@ app.get('/api/charts/closed-issues-by-project', async (req, res) => {
 
 app.get('/api/charts/bug-status-distribution', async (req, res) => {
   try {
-    const query = `
+    const sqlQuery = `
       SELECT 
         status,
         COUNT(*) as count
@@ -554,7 +554,7 @@ app.get('/api/charts/bug-status-distribution', async (req, res) => {
       GROUP BY status
       ORDER BY count DESC
     `;
-    const [results] = await query(query);
+    const [results] = await query(sqlQuery);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -563,7 +563,7 @@ app.get('/api/charts/bug-status-distribution', async (req, res) => {
 
 app.get('/api/charts/bug-severity-distribution', async (req, res) => {
   try {
-    const query = `
+    const sqlQuery = `
       SELECT 
         severity,
         COUNT(*) as count
@@ -577,7 +577,7 @@ app.get('/api/charts/bug-severity-distribution', async (req, res) => {
           WHEN 'Low' THEN 4
         END
     `;
-    const [results] = await query(query);
+    const [results] = await query(sqlQuery);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
