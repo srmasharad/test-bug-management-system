@@ -5,7 +5,6 @@ require('dotenv').config();
 const usePostgres = !!process.env.DATABASE_URL;
 const dbModule = usePostgres ? require('./database-pg') : require('./database');
 const { initDatabase, getPool } = dbModule;
-const { seedData } = require('./seed-data');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,12 +31,15 @@ initDatabase().then(async pool => {
   db = pool;
   console.log(`Database connected (${usePostgres ? 'PostgreSQL' : 'SQLite'})`);
   
-  try {
-    console.log('Seeding database with test data...');
-    await seedData(db);
-    console.log('Database seeded successfully!');
-  } catch (error) {
-    console.error('Error seeding database:', error);
+  if (process.env.SEED_DATA === 'true') {
+    try {
+      console.log('Seeding database with test data...');
+      const { seedData } = usePostgres ? require('./seed-data-pg') : require('./seed-data');
+      await seedData(db);
+      console.log('Database seeded successfully!');
+    } catch (error) {
+      console.error('Error seeding database:', error);
+    }
   }
 }).catch(err => {
   console.error('Failed to initialize database:', err);
@@ -349,7 +351,21 @@ app.put('/api/bugs/:id', async (req, res) => {
 app.get('/api/reports/test-executions-by-suite', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 7;
-    const sqlQuery = `
+    const sqlQuery = usePostgres ? `
+      SELECT 
+        ts.test_suite_id,
+        ts.name as suite_name,
+        p.name as project_name,
+        COUNT(DISTINCT tc.test_case_id) as total_test_cases,
+        COUNT(te.execution_id) as total_executions,
+        COUNT(CASE WHEN te.execution_date >= CURRENT_TIMESTAMP - INTERVAL '1 day' * $1 THEN te.execution_id END) as recent_executions
+      FROM test_suites ts
+      JOIN projects p ON ts.project_id = p.project_id
+      LEFT JOIN test_cases tc ON ts.test_suite_id = tc.test_suite_id
+      LEFT JOIN test_executions te ON tc.test_case_id = te.test_case_id
+      GROUP BY ts.test_suite_id, ts.name, p.name
+      ORDER BY p.name, ts.name
+    ` : `
       SELECT 
         ts.test_suite_id,
         ts.name as suite_name,
