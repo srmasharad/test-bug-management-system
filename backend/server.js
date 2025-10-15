@@ -420,7 +420,19 @@ app.get('/api/reports/projects-with-bugs', async (req, res) => {
 app.get('/api/reports/bugs-per-tester', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 7;
-    const sqlQuery = `
+    const sqlQuery = usePostgres ? `
+      SELECT 
+        t.tester_id,
+        t.name as tester_name,
+        t.email,
+        COUNT(CASE WHEN b.assigned_date >= CURRENT_TIMESTAMP - INTERVAL '1 day' * $1 THEN b.bug_id END) as bugs_assigned_period,
+        COUNT(b.bug_id) as total_bugs_assigned,
+        COUNT(CASE WHEN b.status IN ('Closed', 'Verified') THEN 1 END) as bugs_resolved
+      FROM testers t
+      LEFT JOIN bugs b ON t.tester_id = b.assigned_to
+      GROUP BY t.tester_id, t.name, t.email
+      ORDER BY bugs_assigned_period DESC, t.name
+    ` : `
       SELECT 
         t.tester_id,
         t.name as tester_name,
@@ -442,7 +454,27 @@ app.get('/api/reports/bugs-per-tester', async (req, res) => {
 
 app.get('/api/reports/bugs-discovered-last-week', async (req, res) => {
   try {
-    const sqlQuery = `
+    const sqlQuery = usePostgres ? `
+      SELECT 
+        b.bug_id,
+        b.name as bug_name,
+        b.description,
+        b.status,
+        b.severity,
+        b.priority,
+        b.discovered_date,
+        t.name as discovered_by_name,
+        t.email as tester_email,
+        tc.test_case_id,
+        tc.name as test_case_name,
+        p.name as project_name
+      FROM bugs b
+      JOIN testers t ON b.discovered_by = t.tester_id
+      LEFT JOIN test_cases tc ON b.test_case_id = tc.test_case_id
+      JOIN projects p ON b.project_id = p.project_id
+      WHERE b.discovered_date >= CURRENT_DATE - INTERVAL '7 days'
+      ORDER BY b.discovered_date DESC
+    ` : `
       SELECT 
         b.bug_id,
         b.name as bug_name,
@@ -517,7 +549,19 @@ app.get('/api/reports/unassigned-bugs', async (req, res) => {
 app.get('/api/charts/open-issues-by-project', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
-    const sqlQuery = `
+    const sqlQuery = usePostgres ? `
+      SELECT 
+        p.project_id,
+        p.name as project_name,
+        DATE(b.discovered_date) as date,
+        COUNT(b.bug_id) as open_issues
+      FROM projects p
+      LEFT JOIN bugs b ON p.project_id = b.project_id 
+        AND b.status IN ('New', 'Assigned', 'Open', 'Fixed', 'Retest')
+        AND b.discovered_date >= CURRENT_DATE - INTERVAL '1 day' * $1
+      GROUP BY p.project_id, p.name, DATE(b.discovered_date)
+      ORDER BY date DESC
+    ` : `
       SELECT 
         p.project_id,
         p.name as project_name,
@@ -540,7 +584,19 @@ app.get('/api/charts/open-issues-by-project', async (req, res) => {
 app.get('/api/charts/closed-issues-by-project', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
-    const sqlQuery = `
+    const sqlQuery = usePostgres ? `
+      SELECT 
+        p.project_id,
+        p.name as project_name,
+        DATE(b.resolution_date) as date,
+        COUNT(b.bug_id) as closed_issues
+      FROM projects p
+      LEFT JOIN bugs b ON p.project_id = b.project_id 
+        AND b.status IN ('Closed', 'Verified')
+        AND b.resolution_date >= CURRENT_DATE - INTERVAL '1 day' * $1
+      GROUP BY p.project_id, p.name, DATE(b.resolution_date)
+      ORDER BY date DESC
+    ` : `
       SELECT 
         p.project_id,
         p.name as project_name,
