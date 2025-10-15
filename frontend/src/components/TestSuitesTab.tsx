@@ -1,58 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Clipboard } from 'lucide-react';
-import api, { TestSuite, Project } from '../lib/api';
+import { Plus, Clipboard, Loader2 } from 'lucide-react';
+import { TestSuite } from '../lib/api';
+import { useProjects, useTestSuites, useCreateTestSuite } from '../hooks/useQueries';
 
 export default function TestSuitesTab() {
-  const [testSuites, setTestSuites] = useState<TestSuite[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { data: testSuites = [], isLoading } = useTestSuites();
+  const { data: projects = [] } = useProjects();
+  const createTestSuite = useCreateTestSuite();
+
   const [formData, setFormData] = useState<TestSuite>({
     project_id: 0,
     name: '',
     description: ''
   });
 
-  useEffect(() => {
-    loadTestSuites();
-    loadProjects();
-  }, []);
-
-  const loadTestSuites = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getTestSuites();
-      setTestSuites(data);
-    } catch (error) {
-      console.error('Error loading test suites:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadProjects = async () => {
-    try {
-      const data = await api.getProjects();
-      setProjects(data);
-    } catch (error) {
-      console.error('Error loading projects:', error);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await api.createTestSuite(formData);
-      setFormData({ project_id: 0, name: '', description: '' });
-      loadTestSuites();
-    } catch (error) {
-      console.error('Error creating test suite:', error);
-    }
+    createTestSuite.mutate(formData, {
+      onSuccess: () => {
+        setFormData({ project_id: 0, name: '', description: '' });
+      }
+    });
   };
 
   return (
@@ -103,8 +77,9 @@ export default function TestSuitesTab() {
                 rows={4}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={!formData.project_id}>
-              Create Test Suite
+            <Button type="submit" className="w-full" disabled={!formData.project_id || createTestSuite.isPending}>
+              {createTestSuite.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {createTestSuite.isPending ? 'Creating...' : 'Create Test Suite'}
             </Button>
           </form>
         </CardContent>
@@ -119,8 +94,11 @@ export default function TestSuitesTab() {
           <CardDescription>View all test suites</CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p className="text-center text-gray-500">Loading...</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+              <span className="ml-2 text-gray-500">Loading test suites...</span>
+            </div>
           ) : (
             <div className="space-y-3">
               {testSuites.map(suite => {
