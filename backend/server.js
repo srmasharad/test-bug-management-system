@@ -1,6 +1,10 @@
 const express = require('express');
 const cors = require('cors');
-const { initDatabase, getPool } = require('./database');
+require('dotenv').config();
+
+const usePostgres = !!process.env.DATABASE_URL;
+const dbModule = usePostgres ? require('./database-pg') : require('./database');
+const { initDatabase, getPool } = dbModule;
 const { seedData } = require('./seed-data');
 
 const app = express();
@@ -11,9 +15,22 @@ app.use(express.json());
 
 let db;
 
+const query = async (sql, params) => {
+  if (usePostgres) {
+    let pgSql = sql;
+    params.forEach((_, i) => {
+      pgSql = pgSql.replace('?', `$${i + 1}`);
+    });
+    const result = await dbModule.query(pgSql, params);
+    return [result.rows]; // Return in MySQL format
+  } else {
+    return await query(sql, params);
+  }
+};
+
 initDatabase().then(async pool => {
   db = pool;
-  console.log('Database connected');
+  console.log(`Database connected (${usePostgres ? 'PostgreSQL' : 'SQLite'})`);
   
   try {
     console.log('Seeding database with test data...');
@@ -35,7 +52,7 @@ app.get('/healthz', (req, res) => {
 app.post('/api/projects', async (req, res) => {
   try {
     const { name, description, start_date, end_date, status } = req.body;
-    const [result] = await db.query(
+    const [result] = await query(
       'INSERT INTO projects (name, description, start_date, end_date, status) VALUES (?, ?, ?, ?, ?)',
       [name, description, start_date, end_date, status || 'Active']
     );
@@ -47,7 +64,7 @@ app.post('/api/projects', async (req, res) => {
 
 app.get('/api/projects', async (req, res) => {
   try {
-    const [projects] = await db.query('SELECT * FROM projects');
+    const [projects] = await query('SELECT * FROM projects');
     res.json(projects);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -56,7 +73,7 @@ app.get('/api/projects', async (req, res) => {
 
 app.get('/api/projects/:id', async (req, res) => {
   try {
-    const [projects] = await db.query('SELECT * FROM projects WHERE project_id = ?', [req.params.id]);
+    const [projects] = await query('SELECT * FROM projects WHERE project_id = ?', [req.params.id]);
     if (projects.length === 0) {
       return res.status(404).json({ error: 'Project not found' });
     }
@@ -70,7 +87,7 @@ app.get('/api/projects/:id', async (req, res) => {
 app.post('/api/subprojects', async (req, res) => {
   try {
     const { project_id, name, description } = req.body;
-    const [result] = await db.query(
+    const [result] = await query(
       'INSERT INTO sub_projects (project_id, name, description) VALUES (?, ?, ?)',
       [project_id, name, description]
     );
@@ -91,7 +108,7 @@ app.get('/api/subprojects', async (req, res) => {
       params.push(project_id);
     }
     
-    const [subprojects] = await db.query(query, params);
+    const [subprojects] = await query(query, params);
     res.json(subprojects);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -102,7 +119,7 @@ app.get('/api/subprojects', async (req, res) => {
 app.post('/api/testers', async (req, res) => {
   try {
     const { name, email, role, date_joined } = req.body;
-    const [result] = await db.query(
+    const [result] = await query(
       'INSERT INTO testers (name, email, role, date_joined) VALUES (?, ?, ?, ?)',
       [name, email, role, date_joined]
     );
@@ -114,7 +131,7 @@ app.post('/api/testers', async (req, res) => {
 
 app.get('/api/testers', async (req, res) => {
   try {
-    const [testers] = await db.query('SELECT * FROM testers');
+    const [testers] = await query('SELECT * FROM testers');
     res.json(testers);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -123,7 +140,7 @@ app.get('/api/testers', async (req, res) => {
 
 app.get('/api/testers/:id', async (req, res) => {
   try {
-    const [testers] = await db.query('SELECT * FROM testers WHERE tester_id = ?', [req.params.id]);
+    const [testers] = await query('SELECT * FROM testers WHERE tester_id = ?', [req.params.id]);
     if (testers.length === 0) {
       return res.status(404).json({ error: 'Tester not found' });
     }
@@ -137,11 +154,11 @@ app.get('/api/testers/:id', async (req, res) => {
 app.post('/api/testsuites', async (req, res) => {
   try {
     const { project_id, name, description } = req.body;
-    const [result] = await db.query(
+    const [result] = await query(
       'INSERT INTO test_suites (project_id, name, description) VALUES (?, ?, ?)',
       [project_id, name, description]
     );
-    const [suite] = await db.query('SELECT * FROM test_suites WHERE test_suite_id = ?', [result.insertId]);
+    const [suite] = await query('SELECT * FROM test_suites WHERE test_suite_id = ?', [result.insertId]);
     res.json(suite[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -159,7 +176,7 @@ app.get('/api/testsuites', async (req, res) => {
       params.push(project_id);
     }
     
-    const [suites] = await db.query(query, params);
+    const [suites] = await query(query, params);
     res.json(suites);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -170,11 +187,11 @@ app.get('/api/testsuites', async (req, res) => {
 app.post('/api/testcases', async (req, res) => {
   try {
     const { test_suite_id, name, description, preconditions, steps, expected_result, priority } = req.body;
-    const [result] = await db.query(
+    const [result] = await query(
       'INSERT INTO test_cases (test_suite_id, name, description, preconditions, steps, expected_result, priority) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [test_suite_id, name, description, preconditions, steps, expected_result, priority || 'Medium']
     );
-    const [testcase] = await db.query('SELECT * FROM test_cases WHERE test_case_id = ?', [result.insertId]);
+    const [testcase] = await query('SELECT * FROM test_cases WHERE test_case_id = ?', [result.insertId]);
     res.json(testcase[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -192,7 +209,7 @@ app.get('/api/testcases', async (req, res) => {
       params.push(test_suite_id);
     }
     
-    const [testcases] = await db.query(query, params);
+    const [testcases] = await query(query, params);
     res.json(testcases);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -201,7 +218,7 @@ app.get('/api/testcases', async (req, res) => {
 
 app.get('/api/testcases/:id', async (req, res) => {
   try {
-    const [testcases] = await db.query('SELECT * FROM test_cases WHERE test_case_id = ?', [req.params.id]);
+    const [testcases] = await query('SELECT * FROM test_cases WHERE test_case_id = ?', [req.params.id]);
     if (testcases.length === 0) {
       return res.status(404).json({ error: 'Test case not found' });
     }
@@ -215,11 +232,11 @@ app.get('/api/testcases/:id', async (req, res) => {
 app.post('/api/executions', async (req, res) => {
   try {
     const { test_case_id, tester_id, status, notes } = req.body;
-    const [result] = await db.query(
+    const [result] = await query(
       'INSERT INTO test_executions (test_case_id, tester_id, status, notes) VALUES (?, ?, ?, ?)',
       [test_case_id, tester_id, status, notes]
     );
-    const [execution] = await db.query('SELECT * FROM test_executions WHERE execution_id = ?', [result.insertId]);
+    const [execution] = await query('SELECT * FROM test_executions WHERE execution_id = ?', [result.insertId]);
     res.json(execution[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -228,7 +245,7 @@ app.post('/api/executions', async (req, res) => {
 
 app.get('/api/executions', async (req, res) => {
   try {
-    const [executions] = await db.query('SELECT * FROM test_executions');
+    const [executions] = await query('SELECT * FROM test_executions');
     res.json(executions);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -245,7 +262,7 @@ app.post('/api/bugs', async (req, res) => {
     
     const assigned_date = assigned_to ? new Date().toISOString() : null;
     
-    const [result] = await db.query(
+    const [result] = await query(
       `INSERT INTO bugs (project_id, sub_project_id, test_case_id, discovered_by, assigned_to,
        name, description, steps_to_reproduce, status, severity, priority, type, environment, assigned_date)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -254,7 +271,7 @@ app.post('/api/bugs', async (req, res) => {
        type || 'Functional', environment, assigned_date]
     );
     
-    const [bug] = await db.query('SELECT * FROM bugs WHERE bug_id = ?', [result.insertId]);
+    const [bug] = await query('SELECT * FROM bugs WHERE bug_id = ?', [result.insertId]);
     res.json(bug[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -272,7 +289,7 @@ app.get('/api/bugs', async (req, res) => {
       params.push(project_id);
     }
     
-    const [bugs] = await db.query(query, params);
+    const [bugs] = await query(query, params);
     res.json(bugs);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -281,7 +298,7 @@ app.get('/api/bugs', async (req, res) => {
 
 app.get('/api/bugs/:id', async (req, res) => {
   try {
-    const [bugs] = await db.query('SELECT * FROM bugs WHERE bug_id = ?', [req.params.id]);
+    const [bugs] = await query('SELECT * FROM bugs WHERE bug_id = ?', [req.params.id]);
     if (bugs.length === 0) {
       return res.status(404).json({ error: 'Bug not found' });
     }
@@ -318,10 +335,10 @@ app.put('/api/bugs/:id', async (req, res) => {
     
     if (fields.length > 0) {
       values.push(bugId);
-      await db.query(`UPDATE bugs SET ${fields.join(', ')} WHERE bug_id = ?`, values);
+      await query(`UPDATE bugs SET ${fields.join(', ')} WHERE bug_id = ?`, values);
     }
     
-    const [bug] = await db.query('SELECT * FROM bugs WHERE bug_id = ?', [bugId]);
+    const [bug] = await query('SELECT * FROM bugs WHERE bug_id = ?', [bugId]);
     res.json(bug[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -347,7 +364,7 @@ app.get('/api/reports/test-executions-by-suite', async (req, res) => {
       GROUP BY ts.test_suite_id, ts.name, p.name
       ORDER BY p.name, ts.name
     `;
-    const [results] = await db.query(query, [days]);
+    const [results] = await query(query, [days]);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -377,7 +394,7 @@ app.get('/api/reports/projects-with-bugs', async (req, res) => {
       GROUP BY p.project_id, p.name, p.status, sp.sub_project_id, sp.name
       ORDER BY p.name, sp.name
     `;
-    const [results] = await db.query(query);
+    const [results] = await query(query);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -400,7 +417,7 @@ app.get('/api/reports/bugs-per-tester', async (req, res) => {
       GROUP BY t.tester_id, t.name, t.email
       ORDER BY bugs_assigned_period DESC, t.name
     `;
-    const [results] = await db.query(query, [days]);
+    const [results] = await query(query, [days]);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -430,7 +447,7 @@ app.get('/api/reports/bugs-discovered-last-week', async (req, res) => {
       WHERE b.discovered_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)
       ORDER BY b.discovered_date DESC
     `;
-    const [results] = await db.query(query);
+    const [results] = await query(query);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -473,7 +490,7 @@ app.get('/api/reports/unassigned-bugs', async (req, res) => {
         END,
         b.discovered_date DESC
     `;
-    const [results] = await db.query(query);
+    const [results] = await query(query);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -497,7 +514,7 @@ app.get('/api/charts/open-issues-by-project', async (req, res) => {
       GROUP BY p.project_id, p.name, DATE(b.discovered_date)
       ORDER BY date DESC
     `;
-    const [results] = await db.query(query, [days]);
+    const [results] = await query(query, [days]);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -520,7 +537,7 @@ app.get('/api/charts/closed-issues-by-project', async (req, res) => {
       GROUP BY p.project_id, p.name, DATE(b.resolution_date)
       ORDER BY date DESC
     `;
-    const [results] = await db.query(query, [days]);
+    const [results] = await query(query, [days]);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -537,7 +554,7 @@ app.get('/api/charts/bug-status-distribution', async (req, res) => {
       GROUP BY status
       ORDER BY count DESC
     `;
-    const [results] = await db.query(query);
+    const [results] = await query(query);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -560,7 +577,7 @@ app.get('/api/charts/bug-severity-distribution', async (req, res) => {
           WHEN 'Low' THEN 4
         END
     `;
-    const [results] = await db.query(query);
+    const [results] = await query(query);
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
