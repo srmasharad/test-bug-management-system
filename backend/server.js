@@ -15,7 +15,7 @@ app.use(express.json());
 
 let db;
 
-const query = async (sql, params) => {
+const query = async (sql, params = []) => {
   if (usePostgres) {
     let pgSql = sql;
     params.forEach((_, i) => {
@@ -24,7 +24,7 @@ const query = async (sql, params) => {
     const result = await dbModule.query(pgSql, params);
     return [result.rows]; // Return in MySQL format
   } else {
-    return await query(sql, params);
+    return await db.query(sql, params);
   }
 };
 
