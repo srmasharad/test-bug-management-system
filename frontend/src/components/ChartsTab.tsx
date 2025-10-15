@@ -1,45 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart3, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import api from '../lib/api';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { 
+  useOpenIssuesByProject, 
+  useClosedIssuesByProject, 
+  useBugStatusDistribution, 
+  useBugSeverityDistribution 
+} from '../hooks/useQueries';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
 export default function ChartsTab() {
-  const [openIssuesData, setOpenIssuesData] = useState<any[]>([]);
-  const [closedIssuesData, setClosedIssuesData] = useState<any[]>([]);
-  const [statusDistData, setStatusDistData] = useState<any[]>([]);
-  const [severityDistData, setSeverityDistData] = useState<any[]>([]);
   const [openPeriod, setOpenPeriod] = useState(30);
   const [closedPeriod, setClosedPeriod] = useState(30);
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadAllCharts();
-  }, []);
+  const { data: openIssuesRaw = [] } = useOpenIssuesByProject(openPeriod);
+  const { data: closedIssuesRaw = [] } = useClosedIssuesByProject(closedPeriod);
+  const { data: statusDistData = [] } = useBugStatusDistribution();
+  const { data: severityDistData = [] } = useBugSeverityDistribution();
 
-  const loadAllCharts = async () => {
-    setLoading(true);
-    try {
-      await Promise.all([
-        loadOpenIssues(openPeriod),
-        loadClosedIssues(closedPeriod),
-        loadStatusDistribution(),
-        loadSeverityDistribution()
-      ]);
-    } catch (error) {
-      console.error('Error loading charts:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadOpenIssues = async (days: number) => {
-    const data = await api.getOpenIssuesByProject(days);
-    
-    const aggregated = data.reduce((acc: any, row: any) => {
+  const openIssuesData = useMemo(() => {
+    return openIssuesRaw.reduce((acc: any, row: any) => {
       const existing = acc.find((item: any) => item.project_name === row.project_name);
       if (existing) {
         existing.count += row.open_issues;
@@ -48,14 +31,10 @@ export default function ChartsTab() {
       }
       return acc;
     }, []);
-    
-    setOpenIssuesData(aggregated);
-  };
+  }, [openIssuesRaw]);
 
-  const loadClosedIssues = async (days: number) => {
-    const data = await api.getClosedIssuesByProject(days);
-    
-    const aggregated = data.reduce((acc: any, row: any) => {
+  const closedIssuesData = useMemo(() => {
+    return closedIssuesRaw.reduce((acc: any, row: any) => {
       const existing = acc.find((item: any) => item.project_name === row.project_name);
       if (existing) {
         existing.count += row.closed_issues;
@@ -64,28 +43,14 @@ export default function ChartsTab() {
       }
       return acc;
     }, []);
-    
-    setClosedIssuesData(aggregated);
-  };
+  }, [closedIssuesRaw]);
 
-  const loadStatusDistribution = async () => {
-    const data = await api.getBugStatusDistribution();
-    setSeverityDistData(data);
-  };
-
-  const loadSeverityDistribution = async () => {
-    const data = await api.getBugSeverityDistribution();
-    setStatusDistData(data);
-  };
-
-  const handleOpenPeriodChange = async (days: number) => {
+  const handleOpenPeriodChange = (days: number) => {
     setOpenPeriod(days);
-    await loadOpenIssues(days);
   };
 
-  const handleClosedPeriodChange = async (days: number) => {
+  const handleClosedPeriodChange = (days: number) => {
     setClosedPeriod(days);
-    await loadClosedIssues(days);
   };
 
   return (

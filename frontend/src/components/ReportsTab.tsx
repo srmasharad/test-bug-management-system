@@ -1,76 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Download } from 'lucide-react';
-import api from '../lib/api';
+import { FileText, Loader2 } from 'lucide-react';
+import { 
+  useTestExecutionsBySuite, 
+  useProjectsWithBugs, 
+  useBugsPerTester, 
+  useBugsDiscoveredLastWeek, 
+  useUnassignedBugs 
+} from '../hooks/useQueries';
 
 export default function ReportsTab() {
-  const [report1Data, setReport1Data] = useState<any[]>([]);
-  const [report2Data, setReport2Data] = useState<any[]>([]);
-  const [report3Data, setReport3Data] = useState<any[]>([]);
-  const [report4Data, setReport4Data] = useState<any[]>([]);
-  const [report5Data, setReport5Data] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [report1Days, setReport1Days] = useState(7);
   const [report3Days, setReport3Days] = useState(7);
 
-  useEffect(() => {
-    loadAllReports();
-  }, []);
+  const { data: report1Data = [] } = useTestExecutionsBySuite(report1Days);
+  const { data: report2Data = [] } = useProjectsWithBugs();
+  const { data: report3Data = [] } = useBugsPerTester(report3Days);
+  const { data: report4Data = [] } = useBugsDiscoveredLastWeek();
+  const { data: report5Data = [] } = useUnassignedBugs();
 
-  const loadAllReports = async () => {
-    setLoading(true);
-    try {
-      await Promise.all([
-        loadReport1(),
-        loadReport2(),
-        loadReport3(),
-        loadReport4(),
-        loadReport5()
-      ]);
-    } catch (error) {
-      console.error('Error loading reports:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadReport1 = async () => {
-    const data = await api.getTestExecutionsBySuite(report1Days);
-    setReport1Data(data);
-  };
-
-  const loadReport2 = async () => {
-    const data = await api.getProjectsWithBugs();
-    setReport2Data(data);
-  };
-
-  const loadReport3 = async () => {
-    const data = await api.getBugsPerTester(report3Days);
-    setReport3Data(data);
-  };
-
-  const loadReport4 = async () => {
-    const data = await api.getBugsDiscoveredLastWeek();
-    setReport4Data(data);
-  };
-
-  const loadReport5 = async () => {
-    const data = await api.getUnassignedBugs();
-    setReport5Data(data);
-  };
-
-  const handleReport1DaysChange = async (days: number) => {
+  const handleReport1DaysChange = (days: number) => {
     setReport1Days(days);
-    const data = await api.getTestExecutionsBySuite(days);
-    setReport1Data(data);
   };
 
-  const handleReport3DaysChange = async (days: number) => {
+  const handleReport3DaysChange = (days: number) => {
     setReport3Days(days);
-    const data = await api.getBugsPerTester(days);
-    setReport3Data(data);
   };
 
   return (

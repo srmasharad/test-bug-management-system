@@ -1,18 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, FileText, Play } from 'lucide-react';
-import api, { TestCase, TestSuite, TestExecution, Tester } from '../lib/api';
+import { Plus, FileText, Play, Loader2 } from 'lucide-react';
+import { TestCase, TestExecution } from '../lib/api';
+import { useTestCases, useTestSuites, useTesters, useCreateTestCase, useCreateExecution } from '../hooks/useQueries';
 
 export default function TestCasesTab() {
-  const [testCases, setTestCases] = useState<TestCase[]>([]);
-  const [testSuites, setTestSuites] = useState<TestSuite[]>([]);
-  const [testers, setTesters] = useState<Tester[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { data: testCases = [], isLoading } = useTestCases();
+  const { data: testSuites = [] } = useTestSuites();
+  const { data: testers = [] } = useTesters();
+  const createTestCase = useCreateTestCase();
+  const createExecution = useCreateExecution();
+
   const [showExecutionForm, setShowExecutionForm] = useState(false);
   const [selectedTestCase, setSelectedTestCase] = useState<number | null>(null);
   
@@ -33,71 +36,32 @@ export default function TestCasesTab() {
     notes: ''
   });
 
-  useEffect(() => {
-    loadTestCases();
-    loadTestSuites();
-    loadTesters();
-  }, []);
-
-  const loadTestCases = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getTestCases();
-      setTestCases(data);
-    } catch (error) {
-      console.error('Error loading test cases:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadTestSuites = async () => {
-    try {
-      const data = await api.getTestSuites();
-      setTestSuites(data);
-    } catch (error) {
-      console.error('Error loading test suites:', error);
-    }
-  };
-
-  const loadTesters = async () => {
-    try {
-      const data = await api.getTesters();
-      setTesters(data);
-    } catch (error) {
-      console.error('Error loading testers:', error);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await api.createTestCase(formData);
-      setFormData({
-        test_suite_id: 0,
-        name: '',
-        description: '',
-        preconditions: '',
-        steps: '',
-        expected_result: '',
-        priority: 'Medium'
-      });
-      loadTestCases();
-    } catch (error) {
-      console.error('Error creating test case:', error);
-    }
+    createTestCase.mutate(formData, {
+      onSuccess: () => {
+        setFormData({
+          test_suite_id: 0,
+          name: '',
+          description: '',
+          preconditions: '',
+          steps: '',
+          expected_result: '',
+          priority: 'Medium'
+        });
+      }
+    });
   };
 
   const handleExecutionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await api.createExecution(executionForm);
-      setExecutionForm({ test_case_id: 0, tester_id: 0, status: 'Pass', notes: '' });
-      setShowExecutionForm(false);
-      setSelectedTestCase(null);
-    } catch (error) {
-      console.error('Error creating execution:', error);
-    }
+    createExecution.mutate(executionForm, {
+      onSuccess: () => {
+        setExecutionForm({ test_case_id: 0, tester_id: 0, status: 'Pass', notes: '' });
+        setShowExecutionForm(false);
+        setSelectedTestCase(null);
+      }
+    });
   };
 
   const startExecution = (testCaseId: number) => {
@@ -195,8 +159,9 @@ export default function TestCasesTab() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full" disabled={!formData.test_suite_id}>
-                Create Test Case
+              <Button type="submit" className="w-full" disabled={!formData.test_suite_id || createTestCase.isPending}>
+                {createTestCase.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {createTestCase.isPending ? 'Creating...' : 'Create Test Case'}
               </Button>
             </form>
           </CardContent>
@@ -255,8 +220,9 @@ export default function TestCasesTab() {
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button type="submit" className="flex-1" disabled={!executionForm.tester_id}>
-                    Record Execution
+                  <Button type="submit" className="flex-1" disabled={!executionForm.tester_id || createExecution.isPending}>
+                    {createExecution.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {createExecution.isPending ? 'Recording...' : 'Record Execution'}
                   </Button>
                   <Button type="button" variant="outline" onClick={() => {
                     setShowExecutionForm(false);
@@ -280,8 +246,11 @@ export default function TestCasesTab() {
           <CardDescription>View and execute test cases</CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p className="text-center text-gray-500">Loading...</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+              <span className="ml-2 text-gray-500">Loading test cases...</span>
+            </div>
           ) : (
             <div className="space-y-3">
               {testCases.map(testCase => {
