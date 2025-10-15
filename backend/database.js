@@ -1,44 +1,13 @@
-const mysql = require('mysql2/promise');
-
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'test_management',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-};
-
 let pool;
 
 async function initDatabase() {
-  try {
-    const connection = await mysql.createConnection({
-      host: dbConfig.host,
-      user: dbConfig.user,
-      password: dbConfig.password
-    });
-
-    await connection.query(`CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`);
-    await connection.end();
-
-    pool = mysql.createPool(dbConfig);
-
-    await createTables();
-    
-    console.log('Database initialized successfully');
-    return pool;
-  } catch (error) {
-    console.error('Error initializing database:', error);
-    console.log('Falling back to SQLite in-memory database...');
-    return initSQLite();
-  }
+  console.log("Using SQLite in-memory database for local development");
+  return initSQLite();
 }
 
 async function createTables() {
   const connection = await pool.getConnection();
-  
+
   try {
     await connection.query(`
       CREATE TABLE IF NOT EXISTS projects (
@@ -136,15 +105,14 @@ async function createTables() {
         FOREIGN KEY (assigned_to) REFERENCES testers(tester_id)
       )
     `);
-
   } finally {
     connection.release();
   }
 }
 
 function initSQLite() {
-  const sqlite3 = require('better-sqlite3');
-  const db = sqlite3(':memory:');
+  const sqlite3 = require("better-sqlite3");
+  const db = sqlite3(":memory:");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS projects (
@@ -231,7 +199,7 @@ function initSQLite() {
     );
   `);
 
-  console.log('SQLite database initialized');
+  console.log("SQLite database initialized");
 
   return {
     query: (sql, params = []) => {
@@ -239,13 +207,18 @@ function initSQLite() {
         try {
           const stmt = db.prepare(sql);
           let result;
-          
-          if (sql.trim().toUpperCase().startsWith('SELECT')) {
+
+          if (sql.trim().toUpperCase().startsWith("SELECT")) {
             result = stmt.all(...params);
             resolve([result]);
           } else {
             result = stmt.run(...params);
-            resolve([{ insertId: result.lastInsertRowid, affectedRows: result.changes }]);
+            resolve([
+              {
+                insertId: result.lastInsertRowid,
+                affectedRows: result.changes,
+              },
+            ]);
           }
         } catch (error) {
           reject(error);
@@ -259,22 +232,27 @@ function initSQLite() {
             try {
               const stmt = db.prepare(sql);
               let result;
-              
-              if (sql.trim().toUpperCase().startsWith('SELECT')) {
+
+              if (sql.trim().toUpperCase().startsWith("SELECT")) {
                 result = stmt.all(...params);
                 resolve([result]);
               } else {
                 result = stmt.run(...params);
-                resolve([{ insertId: result.lastInsertRowid, affectedRows: result.changes }]);
+                resolve([
+                  {
+                    insertId: result.lastInsertRowid,
+                    affectedRows: result.changes,
+                  },
+                ]);
               }
             } catch (error) {
               reject(error);
             }
           });
         },
-        release: () => {}
+        release: () => {},
       };
-    }
+    },
   };
 }
 
