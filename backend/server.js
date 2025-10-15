@@ -4,7 +4,7 @@ require("dotenv").config();
 
 const usePostgres = !!process.env.DATABASE_URL;
 const dbModule = usePostgres ? require("./database-pg") : require("./database");
-const { initDatabase, getPool } = dbModule;
+const { initDatabase } = dbModule;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,7 +12,8 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-let db;
+let db = global._db;
+let dbReady = global._dbReady || false;
 
 const query = async (sql, params = []) => {
   if (usePostgres) {
@@ -27,33 +28,58 @@ const query = async (sql, params = []) => {
   }
 };
 
-initDatabase()
-  .then(async (pool) => {
-    db = pool;
-    console.log(
-      `Database connected (${usePostgres ? "PostgreSQL" : "SQLite"})`
-    );
+// initDatabase()
+//   .then(async (pool) => {
+//     db = pool;
+//     console.log(
+//       `Database connected (${usePostgres ? "PostgreSQL" : "SQLite"})`
+//     );
 
-    if (process.env.SEED_DATA === "true") {
-      try {
-        console.log("Seeding database with test data...");
-        const { seedData } = usePostgres
-          ? require("./seed-data-pg")
-          : require("./seed-data");
-        await seedData(db);
-        console.log("Database seeded successfully!");
-      } catch (error) {
-        console.error("Error seeding database:", error);
-      }
+//     if (process.env.SEED_DATA === "true") {
+//       try {
+//         console.log("Seeding database with test data...");
+//         const { seedData } = usePostgres
+//           ? require("./seed-data-pg")
+//           : require("./seed-data");
+//         await seedData(db);
+//         console.log("Database seeded successfully!");
+//       } catch (error) {
+//         console.error("Error seeding database:", error);
+//       }
+//     }
+//   })
+//   .catch((err) => {
+//     console.error("Failed to initialize database:", err);
+//     process.exit(1);
+//   });
+
+async function ensureDatabaseReady() {
+  if (!dbReady) {
+    console.log("Initializing database connection...");
+    try {
+      const pool = await initDatabase();
+      db = pool;
+      global._db = pool;
+      global._dbReady = true;
+      dbReady = true;
+      console.log(
+        `Database connected (${usePostgres ? "PostgreSQL" : "SQLite"})`
+      );
+    } catch (err) {
+      console.error("Database init failed:", err);
+      dbReady = false;
+      throw err;
     }
-  })
-  .catch((err) => {
-    console.error("Failed to initialize database:", err);
-    process.exit(1);
-  });
+  }
+}
 
-app.get("/healthz", (req, res) => {
-  res.json({ status: "ok" });
+app.use(async (req, res, next) => {
+  try {
+    await ensureDatabaseReady();
+    next();
+  } catch {
+    res.status(503).json({ error: "Server is initializing, please retry." });
+  }
 });
 
 app.post("/api/projects", async (req, res) => {
@@ -724,6 +750,18 @@ app.get("/api/charts/bug-severity-distribution", async (req, res) => {
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// app.get("/healthz", (req, res) => {
+//   res.json({ status: "ok" });
+// });
+app.get("/healthz", async (req, res) => {
+  try {
+    await ensureDatabaseReady();
+    res.json({ status: "ok", dbReady: true });
+  } catch {
+    res.status(503).json({ status: "initializing" });
   }
 });
 
