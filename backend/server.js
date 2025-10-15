@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+let dbReady = false;
 let db;
 
 const query = async (sql, params = []) => {
@@ -30,6 +31,7 @@ const query = async (sql, params = []) => {
 initDatabase()
   .then(async (pool) => {
     db = pool;
+    dbReady = true;
     console.log(
       `Database connected (${usePostgres ? "PostgreSQL" : "SQLite"})`
     );
@@ -51,6 +53,15 @@ initDatabase()
     console.error("Failed to initialize database:", err);
     process.exit(1);
   });
+
+app.use((req, res, next) => {
+  if (!dbReady) {
+    return res
+      .status(503)
+      .json({ error: "Server is initializing, please retry." });
+  }
+  next();
+});
 
 app.get("/healthz", (req, res) => {
   res.json({ status: "ok" });
