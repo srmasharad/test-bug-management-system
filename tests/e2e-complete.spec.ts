@@ -21,21 +21,14 @@ test.describe('Test Management System E2E Tests', () => {
     await page.getByRole('tab', { name: /projects/i }).click();
     await page.waitForTimeout(500);
     
-    const projectInputs = await page.locator('input[type="text"]').all();
-    if (projectInputs.length > 0) {
-      await projectInputs[0].fill('E2E Test Project');
-    }
+    await page.locator('#name').fill('E2E Test Project');
+    await page.locator('#description').fill('This is an E2E test project');
     
-    const descriptionInputs = await page.locator('textarea, input[type="text"]').all();
-    if (descriptionInputs.length > 1) {
-      await descriptionInputs[1].fill('This is an E2E test project');
-    }
+    await page.getByRole('button', { name: /create project/i }).first().click();
+    await page.waitForTimeout(2000);
     
-    const createButton = page.getByRole('button', { name: /create.*project/i });
-    if (await createButton.isVisible()) {
-      await createButton.click();
-      await page.waitForTimeout(1500);
-    }
+    const content = await page.textContent('body');
+    expect(content).toContain('E2E Test Project');
   });
 
   test('should create a new tester', async ({ page }) => {
