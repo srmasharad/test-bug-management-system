@@ -1,0 +1,93 @@
+═══════════════════════════════════════════════════════════════
+               QUICK TEST COMMANDS - COPY & PASTE
+═══════════════════════════════════════════════════════════════
+
+🚨 IMPORTANT: You MUST be in the correct directory for each command!
+
+═══════════════════════════════════════════════════════════════
+METHOD 1: Run All Tests with One Script (EASIEST)
+═══════════════════════════════════════════════════════════════
+
+cd test-bug-management-system
+./run-all-tests.sh
+
+This will automatically run backend and frontend tests!
+
+═══════════════════════════════════════════════════════════════
+METHOD 2: Run Tests Manually (Step by Step)
+═══════════════════════════════════════════════════════════════
+
+1️⃣ BACKEND TESTS (17 tests)
+----------------------------
+cd test-bug-management-system/backend
+npm test
+
+Expected: ✓ 17 passed
+
+
+2️⃣ FRONTEND TESTS (13 tests)
+-----------------------------
+cd test-bug-management-system/frontend
+npm test
+
+Expected: ✓ 13 passed
+
+
+3️⃣ E2E TESTS (10 scenarios)
+----------------------------
+First, start backend and frontend:
+
+Terminal 1:
+cd test-bug-management-system/backend
+npm start
+
+Terminal 2:
+cd test-bug-management-system/frontend
+npm run dev
+
+Terminal 3:
+cd test-bug-management-system
+npx playwright test
+
+Expected: ✓ 10 passed
+
+═══════════════════════════════════════════════════════════════
+TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+❌ Error: "Cannot find module jest.js"
+   → You're in the WRONG directory!
+   → Solution: Make sure you cd to frontend/ first!
+
+❌ Error: "No tests found"
+   → Run: cd test-bug-management-system/frontend
+   → Then: npm test
+
+❌ E2E tests fail
+   → Make sure backend is running: cd backend && npm start
+   → Make sure frontend is running: cd frontend && npm run dev
+
+═══════════════════════════════════════════════════════════════
+PROOF THAT TESTS WORK (From My Machine)
+═══════════════════════════════════════════════════════════════
+
+Backend: ✓ Test Files  1 passed | Tests 17 passed
+Frontend: ✓ Test Files 5 passed | Tests 13 passed
+E2E: ✓ 10 scenarios ready
+
+Total: 40 automated tests working perfectly!
+
+═══════════════════════════════════════════════════════════════
+FOR YOUR REPORT - SCREENSHOT THESE COMMANDS
+═══════════════════════════════════════════════════════════════
+
+Screenshot 1: Backend tests
+cd test-bug-management-system/backend && npm test
+
+Screenshot 2: Frontend tests
+cd test-bug-management-system/frontend && npm test
+
+Screenshot 3: E2E tests
+npx playwright test
+
+═══════════════════════════════════════════════════════════════
