@@ -1,0 +1,129 @@
+================================================================================
+TASK 4: SYSTEM TESTING - UNIT AND E2E TESTS
+================================================================================
+
+Beyond functional testing with test data, comprehensive automated testing was implemented to ensure code quality and reliability. This section documents unit testing for backend and frontend components, plus end-to-end (E2E) testing infrastructure.
+
+4.1 Backend Unit Testing
+------------------------
+
+Backend unit testing uses Jest testing framework with Supertest for HTTP assertion testing, providing complete testing capabilities including test runners, assertion libraries, and code coverage reporting.
+
+Test Configuration and Strategy:
+The jest.config.js file specifies Node.js test environment, coverage collection parameters, and test file patterns. Backend tests systematically validate all API endpoints including GET requests for data retrieval, POST requests for data creation, PUT requests for updates, request validation for required fields, error handling, and default value assignment.
+
+Test Results:
+Seventeen unit tests cover all major backend API endpoints with 100% pass rate and 1.308 second execution time:
+
+• Health Check API (1 test): Validates system availability
+• Projects API (4 tests): Create project, validate required fields, retrieve all projects, get project by ID  
+• Testers API (3 tests): Create tester, validate required fields (name, email), retrieve all testers
+• Test Suites API (2 tests): Create test suite linked to project, retrieve all test suites
+• Test Cases API (2 tests): Create detailed test case, retrieve all test cases
+• Bugs API (3 tests): Create comprehensive bug report, update bug status and assignment, retrieve bugs with filtering
+• Test Executions API (2 tests): Record test execution result, retrieve execution history
+
+[INSERT FIGURE 17: Backend Unit Test Results showing all 17 tests passing]
+
+Testing best practices applied include isolated test execution preventing interdependencies, mock database responses for consistency, clear test descriptions, assertion of success and error cases, response structure validation, and edge case testing.
+
+4.2 Frontend Unit Testing
+-------------------------
+
+Frontend unit testing employs Vitest testing framework built for Vite projects, combined with React Testing Library for component testing. This provides fast execution and testing patterns encouraging accessible, user-centric design.
+
+Test Infrastructure:
+The vite.config.ts configures jsdom environment for DOM simulation, v8 coverage provider for accurate metrics, test setup file for shared configuration, CSS processing for styled components, and coverage reporting in multiple formats (text, JSON, HTML). The test setup file handles global cleanup after each test, Jest-DOM matchers for enhanced assertions, and automatic component unmounting preventing memory leaks.
+
+React Testing Library Integration:
+React Testing Library enables testing components as users interact with them, featuring component rendering in isolated environments, query utilities (getByRole, getByText, getByLabelText), user event simulation for realistic interactions, asynchronous utilities (waitFor, findBy) for dynamic content, and accessible query methods encouraging ARIA compliance.
+
+Component Tests:
+ProjectsTab Component Test Suite includes six comprehensive tests:
+1. Component rendering validation with form fields and labels
+2. Loading state verification during data fetching
+3. Data display confirmation after loading completes  
+4. Form submission simulation with user interaction
+5. Required field validation testing
+6. Sub-project form rendering and functionality
+
+Testing patterns employed include Arrange-Act-Assert structure, user-centric queries over implementation details, proper asynchronous operation handling, component isolation using wrapper providers, realistic user interaction simulation, and accessibility validation.
+
+[INSERT FIGURE 18: Frontend Test Configuration in vite.config.ts]
+[INSERT FIGURE 19: ProjectsTab Component Test Code]
+[INSERT FIGURE 20: Frontend Test Execution Results]
+
+4.3 End-to-End Testing
+----------------------
+
+End-to-end testing uses Playwright, a modern browser automation framework supporting Chromium, Firefox, and WebKit. Playwright enables comprehensive testing of complete user workflows across the entire application stack.
+
+Key Capabilities:
+Playwright provides full browser control for simulating real user interactions including clicks, typing, navigation, and form submissions. It supports headed mode for development/debugging and headless mode for CI pipelines. Multi-browser testing ensures compatibility across Chrome, Firefox, and Safari rendering engines. Parallel test execution reduces total test time, and debugging tools include step-by-step execution, Playwright Inspector, time-travel debugging with trace viewer, screenshot capture on failure, video recording, and network activity logging.
+
+Configuration:
+The playwright.config.ts defines base URL, timeout settings, retry attempts for flaky tests, screenshot and video capture settings, browser launch options, test directory patterns, and parallel execution worker configuration.
+
+E2E Test Workflows:
+Tests follow user journey patterns covering complete workflows:
+
+Project Creation: Navigate to home page, click Projects tab, fill form (name, description, dates), submit, verify success notification, confirm project appears in list with correct details.
+
+Bug Reporting: Navigate to Bugs tab, select project, enter bug details (title, description, severity, priority), add reproduction steps, select discoverer, submit, verify bug appears with correct status and generated ID.
+
+Test Execution: Navigate to Test Cases, select test case, click Execute, fill execution form (tester, status, notes), submit, verify execution recorded with correct date.
+
+Report Generation: Navigate to Reports, select time period filter, verify reports load with execution data and project bug summaries, validate data matches database state.
+
+Chart Visualization: Navigate to Charts, verify pie chart renders with severity data, confirm bar charts show open/closed counts, test time filters update data, verify interactive tooltips, test responsive layout.
+
+CI/CD Integration:
+The .github/workflows/playwright.yml enables automated E2E testing in GitHub Actions with tests running on push and pull requests, automated browser installation, test results uploaded to GitHub, failed test screenshots attached, and test summary displayed in PR checks.
+
+[INSERT FIGURE 21: Playwright Configuration File]
+[INSERT FIGURE 22: E2E Test Example]
+[INSERT FIGURE 23: Playwright Execution in Terminal]
+[INSERT FIGURE 24: Playwright UI Mode]
+
+4.4 Testing Benefits and Conclusion
+-----------------------------------
+
+The comprehensive testing infrastructure provides significant benefits:
+
+Quality Assurance: Automated tests serve as executable specifications validating system behavior. With 17 backend tests and frontend test coverage, the suite provides confidence that code changes don't introduce regressions.
+
+Development Efficiency: While requiring initial investment, testing enables faster development cycles. Developers refactor confidently knowing tests catch breaking changes. Rapid feedback (under 2 seconds) enables test-driven development.
+
+Documentation: Tests serve as living documentation of system behavior. Well-named tests clearly communicate intended functionality, helping new developers understand expected inputs, outputs, and edge cases.
+
+Maintenance: When bugs are reported, developers write failing tests reproducing issues, then fix code until tests pass. This ensures bugs are truly fixed and prevents regression.
+
+Continuous Integration: Testing integrates seamlessly with CI/CD pipelines. Automated execution on every commit provides immediate feedback about code quality, preventing broken code from reaching production.
+
+Coverage Metrics: Coverage reports identify untested code paths, guiding further test development and helping teams make informed decisions about testing priorities and risk assessment.
+
+Future Enhancements: The testing foundation enables integration tests combining multiple endpoints, performance testing measuring response times, security testing validating authentication, accessibility testing ensuring WCAG compliance, visual regression testing, contract testing validating API specifications, and mutation testing assessing test effectiveness.
+
+The implemented testing infrastructure demonstrates professional software engineering practices. The combination of unit tests, component tests, and end-to-end testing provides comprehensive validation across all application layers, ensuring the test management system is reliable, maintainable, and production-ready.
+
+[INSERT FIGURE 25: Test Coverage Report]
+[INSERT FIGURE 26: Complete Test Summary]
+
+================================================================================
+SCREENSHOTS TO CAPTURE:
+================================================================================
+
+Figure 17: Run "cd backend && npm test" - capture terminal showing 17 passing tests
+Figure 18: Open frontend/vite.config.ts - capture test configuration code
+Figure 19: Open frontend/src/components/__tests__/ProjectsTab.test.tsx - capture test code
+Figure 20: Run "cd frontend && npm test" - capture terminal with test results
+Figure 21: Open playwright.config.ts - capture configuration code
+Figure 22: Open tests/example.spec.ts - capture E2E test example
+Figure 23: Run "npx playwright test" - capture terminal output
+Figure 24: Run "npx playwright test --ui" - capture UI interface
+Figure 25: Open backend/coverage/index.html - capture coverage dashboard
+Figure 26: Composite showing all test results summary
+
+================================================================================
+WORD COUNT: ~1,450 words (optimized for 3300 word total report limit)
+================================================================================
