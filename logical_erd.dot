@@ -1,0 +1,29 @@
+
+digraph LogicalERD {
+    rankdir=TB;
+    node [shape=record, style=filled, fillcolor="#E8F5E9", fontname="Arial", fontsize=10];
+    edge [fontname="Arial", fontsize=9];
+    
+    projects [label="{<f0> projects|<f1> PK: project_id : SERIAL\lname : VARCHAR(255)\ldescription : TEXT\lstart_date : DATE\lend_date : DATE\lstatus : VARCHAR(50)\lcreated_date : TIMESTAMP}"];
+    
+    sub_projects [label="{<f0> sub_projects|<f1> PK: sub_project_id : SERIAL\lFK: project_id : INTEGER\lname : VARCHAR(255)\ldescription : TEXT}"];
+    
+    testers [label="{<f0> testers|<f1> PK: tester_id : SERIAL\lname : VARCHAR(255)\lemail : VARCHAR(255) UNIQUE\lrole : VARCHAR(100)\ldate_joined : DATE}"];
+    
+    test_suites [label="{<f0> test_suites|<f1> PK: test_suite_id : SERIAL\lFK: project_id : INTEGER\lname : VARCHAR(255)\ldescription : TEXT\lcreated_date : TIMESTAMP}"];
+    
+    test_cases [label="{<f0> test_cases|<f1> PK: test_case_id : SERIAL\lFK: test_suite_id : INTEGER\lname : VARCHAR(255)\ldescription : TEXT\lpreconditions : TEXT\lsteps : TEXT\lexpected_result : TEXT\lpriority : VARCHAR(50)\lcreated_date : TIMESTAMP}"];
+    
+    test_executions [label="{<f0> test_executions|<f1> PK: execution_id : SERIAL\lFK: test_case_id : INTEGER\lFK: tester_id : INTEGER\lstatus : VARCHAR(50)\lnotes : TEXT\lexecution_date : TIMESTAMP}"];
+    
+    bugs [label="{<f0> bugs|<f1> PK: bug_id : SERIAL\lFK: project_id : INTEGER\lFK: sub_project_id : INTEGER\lFK: test_case_id : INTEGER\lFK: discovered_by : INTEGER\lFK: assigned_to : INTEGER\lname : VARCHAR(255)\ldescription : TEXT\lsteps_to_reproduce : TEXT\lstatus : VARCHAR(50)\lseverity : VARCHAR(50)\lpriority : VARCHAR(50)\ltype : VARCHAR(50)\lenvironment : VARCHAR(255)\ldiscovered_date : TIMESTAMP\lassigned_date : TIMESTAMP\lresolution_date : TIMESTAMP}"];
+    
+    projects:f1 -> sub_projects:f1 [label="1:N"];
+    projects:f1 -> test_suites:f1 [label="1:N"];
+    projects:f1 -> bugs:f1 [label="1:N"];
+    test_suites:f1 -> test_cases:f1 [label="1:N"];
+    test_cases:f1 -> test_executions:f1 [label="1:N"];
+    test_cases:f1 -> bugs:f1 [label="1:0..1", style=dashed];
+    testers:f1 -> test_executions:f1 [label="1:N"];
+    testers:f1 -> bugs:f1 [label="discovers\n1:N"];
+}

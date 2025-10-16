@@ -1,0 +1,33 @@
+
+digraph ConceptualERD {
+    rankdir=LR;
+    node [shape=box, style=filled, fillcolor=lightblue, fontname="Arial"];
+    edge [fontname="Arial", fontsize=10];
+    
+    Project [label="Project"];
+    SubProject [label="Sub-Project"];
+    Tester [label="Tester"];
+    TestSuite [label="Test Suite"];
+    TestCase [label="Test Case"];
+    TestExecution [label="Test Execution"];
+    Bug [label="Bug/Issue"];
+    
+    Project -> SubProject [label="contains
+1:N"];
+    Project -> TestSuite [label="has
+1:N"];
+    Project -> Bug [label="tracks
+1:N"];
+    TestSuite -> TestCase [label="groups
+1:N"];
+    TestCase -> TestExecution [label="executed in
+1:N"];
+    TestCase -> Bug [label="linked to
+1:0..1", style=dashed];
+    Tester -> TestExecution [label="performs
+1:N"];
+    Tester -> Bug [label="discovers
+1:N"];
+    Tester -> Bug [label="assigned to
+1:N", style=dotted];
+}

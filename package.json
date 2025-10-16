@@ -1,0 +1,17 @@
+{
+  "name": "test-management-system",
+  "version": "1.0.0",
+  "description": "## Assessment Submission - Software Testing & Quality Assurance",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@types/node": "^24.7.2"
+  }
+}
