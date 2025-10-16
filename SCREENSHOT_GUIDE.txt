@@ -1,0 +1,207 @@
+================================================================================
+COMPLETE SCREENSHOT GUIDE FOR PROJECT REPORT
+================================================================================
+
+Your report "COMPLETE_PROJECT_REPORT.docx" has 21 figure placeholders.
+Follow this guide to capture all required screenshots.
+
+================================================================================
+SETUP INSTRUCTIONS
+================================================================================
+
+1. Start the Backend:
+   cd backend
+   npm start
+   
+2. Start the Frontend (in new terminal):
+   cd frontend
+   npm run dev
+   
+3. Open browser: http://localhost:5173
+
+================================================================================
+SCREENSHOTS TO CAPTURE
+================================================================================
+
+TASK 1: SYSTEM DESIGN (2 screenshots)
+--------------------------------------
+
+[FIGURE 1: Conceptual ERD Diagram]
+Location: Root folder / Conceptual_ERD.png
+Action: Open the PNG file and take screenshot
+Shows: High-level entity relationships
+
+[FIGURE 2: Logical ERD Diagram]
+Location: Root folder / Logical_ERD.png  
+Action: Open the PNG file and take screenshot
+Shows: Detailed ERD with all attributes, PKs, FKs
+
+
+TASK 2: SYSTEM IMPLEMENTATION (7 screenshots)
+----------------------------------------------
+
+[FIGURE 3: Project Creation Form]
+1. Open browser: http://localhost:5173
+2. Click "Projects" tab
+3. Screenshot the "Create Project" form section
+Shows: Form with name, description, dates, status fields
+
+[FIGURE 4: Bug Report Form]
+1. Click "Bugs" tab
+2. Screenshot the "Create Bug" form section
+Shows: Comprehensive bug form with all fields
+
+[FIGURE 5: Test Case Form]
+1. Click "Test Cases" tab
+2. Screenshot the "Create Test Case" form section
+Shows: Test case form with preconditions, steps, expected result
+
+[FIGURE 6: Test Execution Report]
+1. Click "Reports" tab
+2. Screenshot "Report 1: Test Executions by Suite" section
+Shows: Table with suite names, test counts, execution data
+
+[FIGURE 7: Project Bug Summary Report]
+1. Still in "Reports" tab
+2. Screenshot "Report 2: Projects with Bug Summary" section
+Shows: Table with projects, bug counts, severity distribution
+
+[FIGURE 8: Open Issues Bar Chart]
+1. Click "Charts" tab
+2. Select "1 Week" or "1 Month" filter
+3. Screenshot the "Open Issues by Project" bar chart
+Shows: Bar chart with project-wise open bug counts
+
+[FIGURE 9: Bug Severity Pie Chart]
+1. Still in "Charts" tab
+2. Screenshot any pie chart showing severity distribution
+Shows: Pie chart with Critical, High, Medium, Low segments
+
+
+TASK 3: SYSTEM TESTING (4 screenshots)
+---------------------------------------
+
+[FIGURE 10: Sample Test Data - Projects List]
+1. Click "Projects" tab
+2. Screenshot the entire projects list showing multiple projects
+Shows: Table with at least 2-3 projects visible
+
+[FIGURE 11: Sample Test Data - Bugs List]
+1. Click "Bugs" tab
+2. Screenshot the bugs list showing multiple bugs
+Shows: Table with multiple bugs showing status, severity, priority
+
+[FIGURE 12: Report 1 with Test Data]
+1. Click "Reports" tab
+2. Screenshot "Report 1" with actual data populated
+Shows: Report displaying real test execution data
+
+[FIGURE 13: Report 2 Bug Summary]
+1. Still in "Reports" tab
+2. Screenshot "Report 2" with bug summary data
+Shows: Bug counts and severity distribution with real data
+
+
+TASK 4: AUTOMATED TESTING (8 screenshots)
+------------------------------------------
+
+BACKEND TESTING:
+
+[FIGURE 14: Backend Unit Test Results]
+1. Open terminal
+2. Run: cd backend && npm test
+3. Screenshot terminal showing all tests passing
+Shows: "17 passed, 17 total" with green checkmarks
+
+[FIGURE 15: Backend Test Code Sample]
+1. Open: backend/__tests__/api.test.js in code editor
+2. Screenshot showing test code (first 30-40 lines)
+Shows: Jest test code with describe/test blocks
+
+FRONTEND TESTING:
+
+[FIGURE 16: Frontend Test Configuration]
+1. Open: frontend/vite.config.ts in code editor
+2. Screenshot showing the test configuration section
+Shows: Vitest config with test environment, coverage settings
+
+[FIGURE 17: Component Test Code]
+1. Open: frontend/src/components/__tests__/ProjectsTab.test.tsx
+2. Screenshot showing test code (first 40-50 lines)
+Shows: React Testing Library test code
+
+[FIGURE 18: Frontend Test Execution]
+1. Open new terminal
+2. Run: cd frontend && npm test
+3. Screenshot terminal with test results
+Shows: Test execution with pass/fail status
+
+E2E TESTING:
+
+[FIGURE 19: Playwright Configuration]
+1. Open: playwright.config.ts in code editor
+2. Screenshot showing configuration
+Shows: Playwright config with browser, timeout settings
+
+[FIGURE 20: E2E Test Workflow Example]
+1. Open: tests/example.spec.ts in code editor
+2. Screenshot showing test code
+Shows: Playwright test with page interactions
+
+[FIGURE 21: Playwright Test Execution]
+1. Open terminal
+2. Run: npx playwright test
+3. Screenshot terminal output
+Shows: E2E test execution results
+
+================================================================================
+TIPS FOR GOOD SCREENSHOTS
+================================================================================
+
+1. Use Full Screen: Maximize windows before capturing
+2. High Quality: Use system screenshot tool (not phone photos)
+   - Windows: Win + Shift + S
+   - Mac: Cmd + Shift + 4
+   - Linux: PrintScreen or Spectacle
+
+3. Clear Visibility: Ensure text is readable
+4. Crop Appropriately: Include relevant content, remove unnecessary toolbars
+5. Consistent Style: Use same window size/zoom for similar screenshots
+6. Label Files: Save as "Figure1_ConceptualERD.png", "Figure2_LogicalERD.png", etc.
+
+================================================================================
+INSERTING SCREENSHOTS INTO WORD DOCUMENT
+================================================================================
+
+1. Open COMPLETE_PROJECT_REPORT.docx
+2. Find placeholder text: [INSERT FIGURE X: ...]
+3. Delete placeholder text
+4. Insert > Pictures > Select your screenshot file
+5. Right-click image > Wrap Text > "In Line with Text"
+6. Resize to fit page width (usually 6-6.5 inches)
+7. Below image, add caption: "Figure X: [Description]" in italic
+
+Example:
+Delete: [INSERT FIGURE 1: Conceptual ERD Diagram]
+Insert: Your Conceptual_ERD.png screenshot
+Add below: Figure 1: Conceptual ERD showing entity relationships
+(Format: Italic, centered)
+
+================================================================================
+FINAL CHECKLIST BEFORE SUBMISSION
+================================================================================
+
+□ All 21 screenshots inserted
+□ All figure captions added (italic, centered)
+□ Word count verified (should be 3000-3500 words)
+□ Font is Calibri 12pt throughout
+□ Page numbers added
+□ Proper spacing (1.5 or double as per requirement)
+□ References in APA format
+□ No placeholder text remaining
+□ Spell check completed
+□ PDF exported (if required)
+
+================================================================================
+ESTIMATED TIME: 45-60 minutes to capture all screenshots
+================================================================================
