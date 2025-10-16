@@ -25,7 +25,8 @@ test.describe('Test Management System E2E Tests', () => {
     await page.locator('#description').fill('This is an E2E test project');
     
     await page.getByRole('button', { name: /create project/i }).first().click();
-    await page.waitForTimeout(2000);
+    
+    await page.waitForTimeout(2500);
     
     const content = await page.textContent('body');
     expect(content).toContain('E2E Test Project');

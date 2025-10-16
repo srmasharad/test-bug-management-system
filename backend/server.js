@@ -56,7 +56,7 @@ app.post('/api/projects', async (req, res) => {
     const { name, description, start_date, end_date, status } = req.body;
     const [result] = await query(
       'INSERT INTO projects (name, description, start_date, end_date, status) VALUES (?, ?, ?, ?, ?)',
-      [name, description, start_date, end_date, status || 'Active']
+      [name, description, start_date || null, end_date || null, status || 'Active']
     );
     res.json({ project_id: result.insertId, ...req.body });
   } catch (error) {
