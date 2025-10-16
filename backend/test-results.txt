@@ -1,0 +1,50 @@
+
+> backend@1.0.0 test
+> jest --coverage
+
+PASS __tests__/api.test.js
+  Backend API Unit Tests
+    Health Check
+      ✓ GET /healthz should return status ok (22 ms)
+    Projects API
+      ✓ POST /api/projects should create a new project (11 ms)
+      ✓ POST /api/projects should return 400 if name is missing (3 ms)
+      ✓ GET /api/projects should return all projects (4 ms)
+      ✓ GET /api/projects/:id should return a specific project (3 ms)
+    Testers API
+      ✓ POST /api/testers should create a new tester (4 ms)
+      ✓ POST /api/testers should validate required fields (3 ms)
+      ✓ GET /api/testers should return all testers (3 ms)
+    Test Suites API
+      ✓ POST /api/testsuites should create a new test suite (4 ms)
+      ✓ GET /api/testsuites should return all test suites (2 ms)
+    Test Cases API
+      ✓ POST /api/testcases should create a new test case (6 ms)
+      ✓ GET /api/testcases should return all test cases (2 ms)
+    Bugs API
+      ✓ POST /api/bugs should create a new bug (3 ms)
+      ✓ PUT /api/bugs/:id should update a bug (2 ms)
+      ✓ GET /api/bugs should return all bugs (2 ms)
+    Test Executions API
+      ✓ POST /api/executions should create a new execution (3 ms)
+      ✓ GET /api/executions should return all executions (2 ms)
+
+--------------------|---------|----------|---------|---------|-------------------
+File                | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+--------------------|---------|----------|---------|---------|-------------------
+All files           |       0 |        0 |       0 |       0 |                   
+ backend            |       0 |        0 |       0 |       0 |                   
+  server.js         |       0 |        0 |       0 |       0 | 1-660             
+ backend/src        |       0 |        0 |       0 |       0 |                   
+  server.js         |       0 |        0 |       0 |       0 | 1-46              
+ backend/src/config |       0 |        0 |       0 |       0 |                   
+  database.js       |       0 |        0 |       0 |       0 | 1-130             
+ backend/src/models |       0 |        0 |       0 |       0 |                   
+  Bug.js            |       0 |        0 |       0 |       0 | 1-84              
+  Project.js        |       0 |        0 |       0 |       0 | 1-52              
+--------------------|---------|----------|---------|---------|-------------------
+Test Suites: 1 passed, 1 total
+Tests:       17 passed, 17 total
+Snapshots:   0 total
+Time:        0.869 s, estimated 1 s
+Ran all test suites.
